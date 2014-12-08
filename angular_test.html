@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.5/angular.min.js"></script>
+</head>
+
+<body ng-app="myapp">
+
+  <div ng-controller="MyController" >
+    <button ng-click="myData.regClick(item, $event)">Register a user</button>
+    <button ng-click="myData.logClick(item, $event)">Login</button>
+    <button ng-click="myData.tokClick(item, $event)">Get Restricted User OBJs with Token</button>
+    <button ng-click="myData.tokusrClick(item, $event)">Get Restricted current User OBJ with Token</button>
+    <br/>
+
+  </div>
+
+  <script>
+    angular.module("myapp", [])
+        .controller("MyController", function($scope, $http) {
+              $scope.myData = {};
+              var dataObj = {
+                username : 'rylan',
+                password : 'passwd'
+
+              };
+
+$scope.myData.regClick = function(item, event) {
+
+      //REGISTER A NEW USER
+      var res = $http.post('http://localhost:8080/api/auth/register', dataObj);
+      res.success(function(data, status, headers, config) {
+          alert(JSON.stringify({data: data}));
+      });
+      res.error(function(data, status, headers, config) {
+          alert( "failure message: " + JSON.stringify({data: data}));
+      });
+
+}
+
+$scope.myData.logClick = function(item, event) {
+
+
+      //LOG A NEW USER IN
+      var res = $http.post('http://localhost:8080/api/auth/login', dataObj);
+      res.success(function(data, status, headers, config) {
+        alert(JSON.stringify({data: data}));
+      });
+      res.error(function(data, status, headers, config) {
+        alert( "failure message: " + JSON.stringify({data: data}));
+      });
+
+}
+
+$scope.myData.tokClick = function(item, event) {
+
+
+      //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
+       $http.defaults.headers.common['x-auth'] =
+      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjo2MDAwLCJpZCI6IjU0ODVlZWIxYjkxYzhlN2UwYTc0ZWRkMiJ9.ewiarQ13bEq9kpnDqoLb-1GihpI7481VbZ--UKZdnhA";
+      var res = $http.get('http://localhost:8080/api/users');
+      res.success(function(data, status, headers, config) {
+        alert(JSON.stringify({data: data}));
+      });
+      res.error(function(data, status, headers, config) {
+        alert( "failure message: " + JSON.stringify({data: data}));
+      });
+
+}
+
+$scope.myData.tokusrClick = function(item, event) {
+
+
+      //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
+      $http.defaults.headers.common['x-auth'] =
+              "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjo2MDAwLCJpZCI6IjU0ODVlZWIxYjkxYzhlN2UwYTc0ZWRkMiJ9.ewiarQ13bEq9kpnDqoLb-1GihpI7481VbZ--UKZdnhA";
+      var res = $http.post('http://localhost:8080/api/posts');
+      res.success(function(data, status, headers, config) {
+        alert(JSON.stringify({data: data}));
+      });
+      res.error(function(data, status, headers, config) {
+        alert( "failure message: " + JSON.stringify({data: data}));
+      });
+
+}
+
+});
+  </script>
+
+</body>
+
+</html>
