@@ -4,6 +4,7 @@ var DataModel = require('./models/datamodel');
 var bcrypt = require('bcrypt');
 var jwt = require('jwt-simple');
 var mysecret = 'words and things';
+var tokenExp = '180000';                         // Tokens are signed for 3 mintues in milliseconds
 
 
 
@@ -11,9 +12,11 @@ var app = express();
 
 app.use(bodyParser.json());
 app.use(require('./middleware/authtransform'));  //Set JWT middleware
+app.use(require('./middleware/jwt-expire'));     //Set JWT-Token Expiration middleware
+app.use(require('./middleware/jwt-user'));       //Set JWT-User Integrity middleware
 app.use(require('./middleware/cors'));           //Set CORS middleware
 
-var port = process.env.PORT || 8080; 		// set our port
+var port = process.env.PORT || 8080; 		     // set our port
 var router = express.Router();
 
 //test route to make sure everything is working (accessed at GET http://localhost:8080/api)
@@ -34,7 +37,7 @@ router.route('/auth/register')
                 user.password = hash;
                 user.save(function(err,user) {
                         if(err) { return(next(err)); }
-                        res.status(200).send(user);
+                        res.status(200).send();
 
                 });
         });
@@ -53,7 +56,7 @@ router.route('/auth/login')
                                 if (err) { return next(err); }
                                 if (!valid) { return res.status(401).send(); }
                                 var token = jwt.encode({
-                                        username: user.username, exp: 6000, id: user._id
+                                        username: user.username, exp: new Date().getTime() + tokenExp, id: user._id
                                 }, mysecret);
                                 res.status(200).send(token);
                  });
