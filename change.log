@@ -17,3 +17,5 @@ Dec, 09 2014
 Dec, 10 2014
 
 - fixed session key expiring.
+
+- added server-responses.js
