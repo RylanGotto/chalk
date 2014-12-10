@@ -1,3 +1,4 @@
+var DataModel = require('../models/datamodel');
 module.exports = function (req, res, next) {
     if (req.auth){
         console.log(req.auth.id);

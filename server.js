@@ -3,8 +3,7 @@ var bodyParser = require('body-parser');
 var DataModel = require('./models/datamodel');
 var bcrypt = require('bcrypt');
 var jwt = require('jwt-simple');
-var mysecret = 'words and things';
-var tokenExp = '180000';                         // Tokens are signed for 3 mintues in milliseconds
+var jwtconfig = require('./jwt-config');                      // Tokens are signed for 3 mintues in milliseconds
 
 
 
@@ -32,6 +31,7 @@ router.route('/auth/register')
     .post(function(req, res, next) {
         var user = new DataModel.User();
         user.username = req.body.username;
+        user.email = req.body.email;
         user.profileImage = "no image right now :(" ;
         bcrypt.hash(req.body.password, 10, function (err, hash) {
                 user.password = hash;
@@ -56,8 +56,8 @@ router.route('/auth/login')
                                 if (err) { return next(err); }
                                 if (!valid) { return res.status(401).send(); }
                                 var token = jwt.encode({
-                                        username: user.username, exp: new Date().getTime() + tokenExp, id: user._id
-                                }, mysecret);
+                                        username: user.username, exp: new Date().getTime() + jwtconfig.exp, id: user._id
+                                }, jwtconfig.secret);
                                 res.status(200).send(token);
                  });
         });
@@ -98,20 +98,18 @@ router.route('/users')
  **********************************************************************************************************************/
 router.route('/posts')
 
-    .post(function(req, res) {
+    .post(function(req, res, next) {
             if (!req.auth) {
                     return res.status(401).send();
             }
-            var post = new DataModel.Post(); 		// create a new instance of the post model
+            var post = new DataModel.Post();        // create a new instance of the post model
             post.content = req.body.content;  // set the post content (comes from the request)
             post.author_id = req.body.author_id;
 
             // save the bear and check for errors
             post.save(function(err) {
-                    if (err)
-                            res.send(err);
-
-                    res.json({ message: 'Post created!' });
+                    if(err) { return(next(err)); }
+                        res.status(200).send();
             });
 
     })

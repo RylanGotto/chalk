@@ -18,8 +18,9 @@ var PostSchema   = new Schema({
 
 
 var UserSchema   = new Schema({
-    username: String,
-    password: {type: String, select: false},
+    username: {type: String, required: true},
+    password: {type: String, select: false, required: true},
+    email: {type: String, select: false, required: true},
     profileImage: String,
     friends: [ {type: String, ref: 'User'} ],
     boards: [ {type: String, ref: 'Board'} ]
@@ -28,7 +29,7 @@ var UserSchema   = new Schema({
 
 
 var DataModel = {
-	    Post: db.model('Post', UserSchema),
+	    Post: db.model('Post', PostSchema),
         User: db.model('User', UserSchema),
         Board: db.model('Board' , BoardSchema)
 };

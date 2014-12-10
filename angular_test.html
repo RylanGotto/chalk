@@ -23,12 +23,13 @@
               $scope.myData = {};
               var dataObj = {
                 username : 'rylan',
-                password : 'passwd'
+                password : 'passwd',
+                email : 'r@g.com'
 
               };
 
 $scope.myData.regClick = function(item, event) {
-
+      $http.defaults.headers.common['x-auth'] = "";
       //REGISTER A NEW USER
       var res = $http.post('http://localhost:8080/api/auth/register', dataObj);
       res.success(function(data, status, headers, config) {
@@ -42,7 +43,7 @@ $scope.myData.regClick = function(item, event) {
 
 $scope.myData.logClick = function(item, event) {
 
-
+$http.defaults.headers.common['x-auth'] = "";
       //LOG A NEW USER IN
       var res = $http.post('http://localhost:8080/api/auth/login', dataObj);
       res.success(function(data, status, headers, config) {
@@ -59,8 +60,8 @@ $scope.myData.tokClick = function(item, event) {
 
       //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
        $http.defaults.headers.common['x-auth'] =
-      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjo2MDAwLCJpZCI6IjU0ODVlZWIxYjkxYzhlN2UwYTc0ZWRkMiJ9.ewiarQ13bEq9kpnDqoLb-1GihpI7481VbZ--UKZdnhA";
-      var res = $http.get('http://localhost:8080/api/users');
+      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjoxNDE4MjUxMzI2NDg4LCJpZCI6IjU0ODhhZmY0ODBhZWJkZWMwZGU0ZDNmYiJ9.kOn_J9Kq7PQ1OhtIK0c0TMtteQOzoDiXojP807IwStU";
+      var res = $http.post('http://localhost:8080/api/users');
       res.success(function(data, status, headers, config) {
         alert(JSON.stringify({data: data}));
       });
@@ -75,7 +76,7 @@ $scope.myData.tokusrClick = function(item, event) {
 
       //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
       $http.defaults.headers.common['x-auth'] =
-              "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjo2MDAwLCJpZCI6IjU0ODVlZWIxYjkxYzhlN2UwYTc0ZWRkMiJ9.ewiarQ13bEq9kpnDqoLb-1GihpI7481VbZ--UKZdnhA";
+              "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjoxNDE4MjUxMzI2NDg4LCJpZCI6IjU0ODhhZmY0ODBhZWJkZWMwZGU0ZDNmYiJ9.kOn_J9Kq7PQ1OhtIK0c0TMtteQOzoDiXojP807IwStU";
       var res = $http.post('http://localhost:8080/api/posts');
       res.success(function(data, status, headers, config) {
         alert(JSON.stringify({data: data}));
