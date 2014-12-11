@@ -8,87 +8,87 @@
 
 <body ng-app="myapp">
 
-  <div ng-controller="MyController" >
+<div ng-controller="MyController">
     <button ng-click="myData.regClick(item, $event)">Register a user</button>
     <button ng-click="myData.logClick(item, $event)">Login</button>
     <button ng-click="myData.tokClick(item, $event)">Get Restricted User OBJs with Token</button>
     <button ng-click="myData.tokusrClick(item, $event)">Get Restricted current User OBJ with Token</button>
     <br/>
 
-  </div>
+</div>
 
-  <script>
+<script>
     angular.module("myapp", [])
-        .controller("MyController", function($scope, $http) {
-              $scope.myData = {};
-              var dataObj = {
-                username : 'rylan',
-                password : 'passwd',
-                email : 'r@g.com'
+            .controller("MyController", function ($scope, $http) {
+                $scope.myData = {};
+                var dataObj = {
+                    username: '1rga',
+                    password: 'passwd',
+                    email: '2r@g.com'
 
-              };
+                };
 
-$scope.myData.regClick = function(item, event) {
-      $http.defaults.headers.common['x-auth'] = "";
-      //REGISTER A NEW USER
-      var res = $http.post('http://localhost:8080/api/auth/register', dataObj);
-      res.success(function(data, status, headers, config) {
-          alert(JSON.stringify({data: data}));
-      });
-      res.error(function(data, status, headers, config) {
-          alert( "failure message: " + JSON.stringify({data: data}));
-      });
+                $scope.myData.regClick = function (item, event) {
+                    $http.defaults.headers.common['x-auth'] = "";
+                    //REGISTER A NEW USER
+                    var res = $http.post('http://localhost:8080/api/auth/register', dataObj);
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
 
-}
+                }
 
-$scope.myData.logClick = function(item, event) {
+                $scope.myData.logClick = function (item, event) {
 
-$http.defaults.headers.common['x-auth'] = "";
-      //LOG A NEW USER IN
-      var res = $http.post('http://localhost:8080/api/auth/login', dataObj);
-      res.success(function(data, status, headers, config) {
-        alert(JSON.stringify({data: data}));
-      });
-      res.error(function(data, status, headers, config) {
-        alert( "failure message: " + JSON.stringify({data: data}));
-      });
+                    $http.defaults.headers.common['x-auth'] = "";
+                    //LOG A NEW USER IN
+                    var res = $http.post('http://localhost:8080/api/auth/login', dataObj);
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
 
-}
+                }
 
-$scope.myData.tokClick = function(item, event) {
-
-
-      //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
-       $http.defaults.headers.common['x-auth'] =
-      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjoxNDE4MjUxMzI2NDg4LCJpZCI6IjU0ODhhZmY0ODBhZWJkZWMwZGU0ZDNmYiJ9.kOn_J9Kq7PQ1OhtIK0c0TMtteQOzoDiXojP807IwStU";
-      var res = $http.post('http://localhost:8080/api/users');
-      res.success(function(data, status, headers, config) {
-        alert(JSON.stringify({data: data}));
-      });
-      res.error(function(data, status, headers, config) {
-        alert( "failure message: " + JSON.stringify({data: data}));
-      });
-
-}
-
-$scope.myData.tokusrClick = function(item, event) {
+                $scope.myData.tokClick = function (item, event) {
 
 
-      //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
-      $http.defaults.headers.common['x-auth'] =
-              "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjoxNDE4MjUxMzI2NDg4LCJpZCI6IjU0ODhhZmY0ODBhZWJkZWMwZGU0ZDNmYiJ9.kOn_J9Kq7PQ1OhtIK0c0TMtteQOzoDiXojP807IwStU";
-      var res = $http.post('http://localhost:8080/api/posts');
-      res.success(function(data, status, headers, config) {
-        alert(JSON.stringify({data: data}));
-      });
-      res.error(function(data, status, headers, config) {
-        alert( "failure message: " + JSON.stringify({data: data}));
-      });
+                    //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
+                    $http.defaults.headers.common['x-auth'] =
+                            "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjoxNDE4MjUxMzI2NDg4LCJpZCI6IjU0ODhhZmY0ODBhZWJkZWMwZGU0ZDNmYiJ9.kOn_J9Kq7PQ1OhtIK0c0TMtteQOzoDiXojP807IwStU";
+                    var res = $http.post('http://localhost:8080/api/users');
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
 
-}
+                }
 
-});
-  </script>
+                $scope.myData.tokusrClick = function (item, event) {
+
+
+                    //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
+                    $http.defaults.headers.common['x-auth'] =
+                            "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjoxNDE4MjUxMzI2NDg4LCJpZCI6IjU0ODhhZmY0ODBhZWJkZWMwZGU0ZDNmYiJ9.kOn_J9Kq7PQ1OhtIK0c0TMtteQOzoDiXojP807IwStU";
+                    var res = $http.post('http://localhost:8080/api/posts');
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+
+                }
+
+            });
+</script>
 
 </body>
 

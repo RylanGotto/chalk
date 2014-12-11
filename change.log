@@ -2,13 +2,13 @@ Dec, 08 2014
 
 - Added JWT token expiry middleware. JWT tokens are now signed with a UTC timestamp of the current time plus additional time in which the token will expire. Current time is 180000 milliseconds 3 minutes.
 
-- Added JWT token user authentication checking middleware. This checks the username and user_id embedded within the JWT token to ensure the user exists within our system, and the token how not being counterfeited. Respondes with 401 and message.
+- Added JWT token user authentication checking middleware. This checks the username and user_id embedded within the JWT token to ensure the user exists within our system, and the token is not being counterfeited. Responds with 401 and message.
 
 Dec, 09 2014
 
-- added email feild to datamodel
+- added email field to data-model.
 
-- Updated data model to require username, password, email
+- Updated data model to require username, password, email.
 
 - Added database checking to make sure an email has not been registered already. We don't play dat.
 
@@ -18,4 +18,10 @@ Dec, 10 2014
 
 - fixed session key expiring.
 
-- added server-responses.js
+- added server-responses.js.
+
+- add username checking to make sure username has not already been registered.
+
+- Changed from generic responses to json responses with status.
+
+
