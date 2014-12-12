@@ -13,5 +13,5 @@ module.exports = {
     post_up: {message: 'Post updated!'},
     post_del: {message: 'Successfully deleted'},
     toke_unauth: {message: 'Unauthorized'},
-    toke_exp: {message: 'Session Expired'}
+    sess_exp: {message: 'Session Expired'}
 }

@@ -24,4 +24,8 @@ Dec, 10 2014
 
 - Changed from generic responses to json responses with status.
 
+Dec 11, 2014
+
+- added user text inputs and local storage to jwt auth tests.
+
 

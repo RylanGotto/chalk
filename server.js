@@ -32,8 +32,9 @@ router.route('/auth/register')
         DataModel.User.findOne({email: {$in: [req.body.email]}}).select('email')
             .exec(function (err, user) {
                 if (err) {
-                    return next(err);
+                    return next(err)
                 }
+                ;
                 if (user) {
                     return res.status(401).json(jmsg.email_ex);
                 }

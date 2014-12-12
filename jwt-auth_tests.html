@@ -14,6 +14,18 @@
     <button ng-click="myData.tokClick(item, $event)">Get Restricted User OBJs with Token</button>
     <button ng-click="myData.tokusrClick(item, $event)">Get Restricted current User OBJ with Token</button>
     <br/>
+    <label class="item item-input">
+        <span class="input-label">user</span>
+        <input type="text" ng-model="myData.username">
+    </label>
+    <label class="item item-input">
+        <span class="input-label">Password</span>
+        <input type="text" ng-model="myData.password">
+    </label>
+    <label class="item item-input">
+        <span class="input-label">Email</span>
+        <input type="text" ng-model="myData.email">
+    </label>
 
 </div>
 
@@ -21,14 +33,15 @@
     angular.module("myapp", [])
             .controller("MyController", function ($scope, $http) {
                 $scope.myData = {};
-                var dataObj = {
-                    username: '1rga',
-                    password: 'passwd',
-                    email: '2r@g.com'
 
-                };
 
                 $scope.myData.regClick = function (item, event) {
+                    var dataObj = {
+                        username: $scope.myData.username,
+                        password: $scope.myData.password,
+                        email: $scope.myData.email
+
+                    };
                     $http.defaults.headers.common['x-auth'] = "";
                     //REGISTER A NEW USER
                     var res = $http.post('http://localhost:8080/api/auth/register', dataObj);
@@ -42,12 +55,18 @@
                 }
 
                 $scope.myData.logClick = function (item, event) {
+                    var dataObj = {
+                        username: $scope.myData.username,
+                        password: $scope.myData.password
+
+                    };
 
                     $http.defaults.headers.common['x-auth'] = "";
                     //LOG A NEW USER IN
                     var res = $http.post('http://localhost:8080/api/auth/login', dataObj);
                     res.success(function (data, status, headers, config) {
-                        alert(JSON.stringify({data: data}));
+                        alert('token set');
+                        localStorage.jwttoken = data;
                     });
                     res.error(function (data, status, headers, config) {
                         alert("failure message: " + JSON.stringify({data: data}));
@@ -59,8 +78,7 @@
 
 
                     //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
-                    $http.defaults.headers.common['x-auth'] =
-                            "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjoxNDE4MjUxMzI2NDg4LCJpZCI6IjU0ODhhZmY0ODBhZWJkZWMwZGU0ZDNmYiJ9.kOn_J9Kq7PQ1OhtIK0c0TMtteQOzoDiXojP807IwStU";
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
                     var res = $http.post('http://localhost:8080/api/users');
                     res.success(function (data, status, headers, config) {
                         alert(JSON.stringify({data: data}));
@@ -75,9 +93,8 @@
 
 
                     //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
-                    $http.defaults.headers.common['x-auth'] =
-                            "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InJ5bGFuIiwiZXhwIjoxNDE4MjUxMzI2NDg4LCJpZCI6IjU0ODhhZmY0ODBhZWJkZWMwZGU0ZDNmYiJ9.kOn_J9Kq7PQ1OhtIK0c0TMtteQOzoDiXojP807IwStU";
-                    var res = $http.post('http://localhost:8080/api/posts');
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    var res = $http.get('http://localhost:8080/api/users');
                     res.success(function (data, status, headers, config) {
                         alert(JSON.stringify({data: data}));
                     });
