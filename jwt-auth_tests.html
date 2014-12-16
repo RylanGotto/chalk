@@ -9,10 +9,13 @@
 <body ng-app="myapp">
 
 <div ng-controller="MyController">
-    <button ng-click="myData.regClick(item, $event)">Register a user</button>
-    <button ng-click="myData.logClick(item, $event)">Login</button>
-    <button ng-click="myData.tokClick(item, $event)">Get Restricted User OBJs with Token</button>
-    <button ng-click="myData.tokusrClick(item, $event)">Get Restricted current User OBJ with Token</button>
+    <button ng-click="myData.regClick(item, $event)">Register a user</button> <br />
+    <button ng-click="myData.logClick(item, $event)">Login</button> <br />
+    <button ng-click="myData.tokClick(item, $event)">Get current user</button> <br />
+    <button ng-click="myData.tokusrClick(item, $event)">Get all users</button> <br />
+    <button ng-click="myData.createPost(item, $event)">Create a Post</button> <br />
+    <button ng-click="myData.createBoard(item, $event)">Create a Board</button> <br />
+    <button ng-click="myData.getMyBoard(item, $event)">Get My Board</button> <br />
     <br/>
     <label class="item item-input">
         <span class="input-label">user</span>
@@ -28,7 +31,7 @@
     </label>
 
 </div>
-
+<h1>Refresh Often</h1>
 <script>
     angular.module("myapp", [])
             .controller("MyController", function ($scope, $http) {
@@ -55,7 +58,7 @@
                 }
 
                 $scope.myData.logClick = function (item, event) {
-                    var dataObj = {
+                    var dataObj1 = {
                         username: $scope.myData.username,
                         password: $scope.myData.password
 
@@ -63,10 +66,10 @@
 
                     $http.defaults.headers.common['x-auth'] = "";
                     //LOG A NEW USER IN
-                    var res = $http.post('http://localhost:8080/api/auth/login', dataObj);
+                    var res = $http.post('http://localhost:8080/api/auth/login', dataObj1);
                     res.success(function (data, status, headers, config) {
-                        alert('token set');
-                        localStorage.jwttoken = data;
+                        alert(data.tok);
+                        localStorage.jwttoken = data.tok;
                     });
                     res.error(function (data, status, headers, config) {
                         alert("failure message: " + JSON.stringify({data: data}));
@@ -95,6 +98,59 @@
                     //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
                     $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
                     var res = $http.get('http://localhost:8080/api/users');
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+
+                }
+
+                $scope.myData.createPost = function (item, event) {
+                    var dataObj2 = {
+                        tag: 'ry\'s Board',
+                        content: "A Test post",
+                        privacyLevel: 1,
+                        timeout: 9
+                    };
+
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    console.log(localStorage.jwttoken);
+                    var res = $http.post('http://localhost:8080/api/posts', dataObj2);
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+
+                }
+                $scope.myData.createBoard = function (item, event) {
+                    var dataObj3 = {
+                        tag: 'test1',
+                        owner: "A owner",
+                        privacyLevel: 1,
+                        timeout: 9,
+                        maxTTL: 1
+                    };
+
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    console.log(localStorage.jwttoken);
+                    var res = $http.post('http://localhost:8080/api/boards', dataObj3);
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+
+                }
+
+                    $scope.myData.getMyBoard = function (item, event) {
+
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    var res = $http.get('http://localhost:8080/api/boards');
                     res.success(function (data, status, headers, config) {
                         alert(JSON.stringify({data: data}));
                     });

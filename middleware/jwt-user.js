@@ -1,5 +1,5 @@
 var DataModel = require('../models/datamodel');
-var jmsg = require('./status-responses');
+var jmsg = require('../status-responses');
 module.exports = function (req, res, next) {
     if (req.auth) {
         DataModel.User.findOne({username: {$in: [req.auth.username]}})
