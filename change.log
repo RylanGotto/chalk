@@ -42,3 +42,7 @@ Dec 15, 2014
 
 - Added createBoard and getMyBoard tests.
 
+Dec 16, 2014
+
+- added population fields to mongoose quries to populate refernces.
+

@@ -29,16 +29,16 @@ router.get('/', function (req, res) {
 router.route('/auth/register')
     //register
     .post(function (req, res, next) {
-        DataModel.User.findOne({email: {$in: [req.body.email]}}).select('email')
+        DataModel.User.findOne({email: {$in: [req.body.email]}}).select('email') //Check to make sure email is not already registered
             .exec(function (err, user) {
                 if (err) {
-                    return next(err)
+                    return next(err);
                 }
                 ;
                 if (user) {
                     return res.status(401).json(jmsg.email_ex);
                 }
-                DataModel.User.findOne({username: {$in: [req.body.username]}}).select('username')
+                DataModel.User.findOne({username: {$in: [req.body.username]}}).select('username') //Check to make sure username is not already registered
                     .exec(function (err, user) {
                         if (err) {
                             return next(err);
@@ -54,7 +54,7 @@ router.route('/auth/register')
                         user.profileImage = "no image right now :(";
 
 
-                        bcrypt.hash(req.body.password, 10, function (err, hash) {
+                        bcrypt.hash(req.body.password, 10, function (err, hash) { //Hash Password
                             user.password = hash;
                             user.save(function (err, user) {
                                 if (err) {
@@ -79,7 +79,7 @@ router.route('/auth/register')
 router.route('/auth/login')
     //login
     .post(function (req, res, next) {
-        DataModel.User.findOne({username: {$in: [req.body.username]}})
+        DataModel.User.findOne({username: {$in: [req.body.username]}}) //Check if user exists and get user.
             .select('password').select('username')
             .exec(function (err, user) {
                 if (err) {
@@ -89,7 +89,7 @@ router.route('/auth/login')
                     return res.status(401).send(jmsg.inv_login);
                 }
                 bcrypt.compare(req.body.password,
-                    user.password, function (err, valid) {
+                    user.password, function (err, valid) {  //Compare password hash
                         if (err) {
                             return next(err);
                         }
@@ -110,7 +110,7 @@ router.route('/auth/login')
  **********************************************************************************************************************/
 router.route('/users')
 
-    // return user object
+    // return a user object and all friends
     .post(function (req, res, next) {
         if (!req.auth) {
             return res.status(401).send();
@@ -140,7 +140,7 @@ router.route('/users')
  *                      Boards
  **********************************************************************************************************************/
 router.route('/boards')
-
+    //create a new board
     .post(function (req, res, next) {
 
         if (!req.auth) {
@@ -175,12 +175,31 @@ router.route('/boards')
 
     })
 
-    // get all the bears (accessed at GET http://localhost:8080/api/bears)
+//find boards published by user
     .get(function (req, res) {
         if (!req.auth) {
             return res.status(401).send();
         }
-        var populateQuery = [{path:'posts', select: 'timeout privacyLevel owner content time'}, {path:"owner", select:'username'}];
+
+        DataModel.Board.find({owner: {$in: [req.auth.id]}})
+            .exec(function (err, board) {
+                if (err) {
+                    return next(err);
+                }
+                if (!board) {
+                    return res.status(401).json(jmsg.board_no);
+                }
+                res.status(200).json(board);
+            });
+    });
+
+//get my board
+router.route('/myboard')
+.get(function (req, res) {
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+        var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content time'}, {path:"owner", select:'username'}];
         DataModel.Board.find({tag: {$in: [req.auth.username + "'s Board"]}}).populate(populateQuery)
             .exec(function (err, board) {
                 if (err) {
@@ -194,13 +213,31 @@ router.route('/boards')
     });
 
 
+//get board by ID and all of its posts
+router.route('/boards/:board_id')
+
+    .get(function (req, res) {
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+        console.log(req.params.board_id);
+        DataModel.Board.find({_id: {$in: [req.params.board_id]}}).populate("posts")
+            .exec(function (err, board){
+                console.log(board);
+                res.status(200).json(board);
+            });
+
+
+    });
+
+
 
 
 /***********************************************************************************************************************
  *                      POSTS
  **********************************************************************************************************************/
 router.route('/posts')
-
+//Create a new post
     .post(function (req, res, next) {
         if (!req.auth) {
             return res.status(401).send();
@@ -221,7 +258,7 @@ router.route('/posts')
                 post.privacyLevel = req.body.privacyLevel;
                 post.timeout = req.body.timeout;
 
-                // save the bear and check for errors
+                // save the post and check for errors
                 post.save(function (err) {
                     if (err) {
                         return (next(err));
@@ -232,23 +269,12 @@ router.route('/posts')
                 });
             });
 
-
-    })
-
-    // get all the beahouse.markModified("rooms");rs (accessed at GET http://localhost:8080/api/bears)
-    .get(function (req, res) {
-        if (!req.auth) {
-            return res.status(401).send();
-        }
-        DataModel.Board.find({_id: {$in: [req.body.tag]}}).populate("posts")
-            .exec(function (err, board) {
-            });
     });
 
 
 
 
-
+//not being user yet.
 router.route('/posts/:post_id')
 
     .get(function (req, res) {

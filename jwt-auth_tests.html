@@ -16,6 +16,7 @@
     <button ng-click="myData.createPost(item, $event)">Create a Post</button> <br />
     <button ng-click="myData.createBoard(item, $event)">Create a Board</button> <br />
     <button ng-click="myData.getMyBoard(item, $event)">Get My Board</button> <br />
+    <button ng-click="myData.getAllMyBoards(item, $event)">Get all of My Boards</button> <br />
     <br/>
     <label class="item item-input">
         <span class="input-label">user</span>
@@ -147,10 +148,22 @@
 
                 }
 
-                    $scope.myData.getMyBoard = function (item, event) {
+                $scope.myData.getAllMyBoards = function (item, event) {
 
                     $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
                     var res = $http.get('http://localhost:8080/api/boards');
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+
+                }
+                $scope.myData.getMyBoard = function (item, event) {
+
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    var res = $http.get('http://localhost:8080/api/myboard');
                     res.success(function (data, status, headers, config) {
                         alert(JSON.stringify({data: data}));
                     });
