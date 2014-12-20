@@ -24,9 +24,9 @@ var PostSchema = new Schema({
 var UserSchema = new Schema({
     username: {type: String, required: true},
     password: {type: String, required: true, select: false},
-    email: {type: String, select: false, required: true},
+    email: {type: String,  required: true},
     profileImage: String,
-    friends: [{type: Schema.ObjectId, ref: 'User'}]
+    friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}]
 });
 
 

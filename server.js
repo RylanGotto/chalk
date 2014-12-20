@@ -110,16 +110,17 @@ router.route('/auth/login')
  **********************************************************************************************************************/
 router.route('/users')
 
-    // return a user object and all friends
+    // return the current logged in user object and all friends
     .post(function (req, res, next) {
         if (!req.auth) {
             return res.status(401).send();
         }
 
-        DataModel.User.findOne({username: {$in: [req.auth.username]}}, function (err, user) {
+        DataModel.User.findOne({_id: {$in: [req.auth.id]}}).populate("friends").exec(function (err, user) {
             if (err) {
                 return next(err);
             }
+            console.log(user);
             res.status(200).json(user);
         });
     })
@@ -135,6 +136,63 @@ router.route('/users')
             res.status(200).json(users);
         });
     });
+
+
+
+router.route('/users/:user_id')
+
+    //return a single user objects
+    .get(function (req, res) {
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+        DataModel.User.findOne({_id: {$in: [req.params.user_id]}}, function (err, user) {
+            if (err) {
+                return next(err);
+            }
+            res.status(200).json(user);
+        });
+    })
+
+    .put(function (req, res) {
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+        DataModel.User.findOne({_id: {$in: [req.params.user_id]}}, function (err, user) {
+            if (err) {
+                return next(err);
+            }
+            if(req.body.friendid){
+                user.friends.push(req.body.friendid);
+                user.save();
+                console.log(user);
+                res.status(200).json({message: req.body.frndname + " was added to your friends list"});
+            }
+            if(req.body.email){
+                user.email = req.body.email;
+                user.save();
+                res.status(200).json(user);
+            }
+            if(req.body.delete){
+
+            var message;
+                DataModel.User.findOne({_id: {$in: [req.body.delete]}}).remove().exec( function (err) {
+                    if (err) {
+                        res.status(200).json(err);
+                    } else {
+                        res.status(200).json(jmsg.user_del);
+                    }
+                });
+
+            }
+
+        });
+
+
+
+
+    });
+
 
 /***********************************************************************************************************************
  *                      Boards
@@ -214,16 +272,14 @@ router.route('/myboard')
 
 
 //get board by ID and all of its posts
-router.route('/boards/:board_id')
+router.route('/boards/:board_tag')
 
     .get(function (req, res) {
         if (!req.auth) {
             return res.status(401).send();
         }
-        console.log(req.params.board_id);
-        DataModel.Board.find({_id: {$in: [req.params.board_id]}}).populate("posts")
+        DataModel.Board.find({tag: {$in: [req.params.board_tag]}}).populate("posts")
             .exec(function (err, board){
-                console.log(board);
                 res.status(200).json(board);
             });
 

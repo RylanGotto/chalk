@@ -44,5 +44,20 @@ Dec 15, 2014
 
 Dec 16, 2014
 
-- added population fields to mongoose quries to populate refernces.
+- added population fields to mongoose quries to populate references.
+
+Dec 17, 2014
+
+- added an update function for users, do a put request to /users/:user_id where user_id is the logged in users id.
+    - add friend
+    - update email
+    - delete user
+        - are all implemented
+
+- created tests for new features, and update the interface to streamline things a bit. <3 Angularjs!
+
+
+TODO: add check to make sure user id in token matches user id passed in as a param
+TODO: add update password
+
 

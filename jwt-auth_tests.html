@@ -9,35 +9,73 @@
 <body ng-app="myapp">
 
 <div ng-controller="MyController">
-    <button ng-click="myData.regClick(item, $event)">Register a user</button> <br />
-    <button ng-click="myData.logClick(item, $event)">Login</button> <br />
-    <button ng-click="myData.tokClick(item, $event)">Get current user</button> <br />
-    <button ng-click="myData.tokusrClick(item, $event)">Get all users</button> <br />
-    <button ng-click="myData.createPost(item, $event)">Create a Post</button> <br />
-    <button ng-click="myData.createBoard(item, $event)">Create a Board</button> <br />
-    <button ng-click="myData.getMyBoard(item, $event)">Get My Board</button> <br />
-    <button ng-click="myData.getAllMyBoards(item, $event)">Get all of My Boards</button> <br />
+    <button ng-click="myData.regClick(item, $event)">Register a user</button>
+    <br/>
+    <button ng-click="myData.logClick(item, $event)">Login</button>
+
     <br/>
     <label class="item item-input">
         <span class="input-label">user</span>
         <input type="text" ng-model="myData.username">
     </label>
+    <br/>
     <label class="item item-input">
         <span class="input-label">Password</span>
         <input type="text" ng-model="myData.password">
     </label>
+    <br/>
     <label class="item item-input">
         <span class="input-label">Email</span>
         <input type="text" ng-model="myData.email">
     </label>
+    <br/>
+    <button ng-click="myData.tokClick(item, $event)">Get signed in user info</button>
+    <br/>
+    <button ng-click="myData.tokusrClick(item, $event)">Get all users</button>
+    <br/>
+
+    <div id="" style="overflow-y: scroll; height:100px;">
+        <div ng-repeat="i in myData.users"></item>
+            {{i}}
+        </div>
+    </div>
+    <button ng-click="myData.createPost(item, $event)">Create a Post</button>
+    <br/>
+    <button ng-click="myData.createBoard(item, $event)">Create a Board</button>
+    <br/>
+    <button ng-click="myData.getMyBoard(item, $event)">Get My Board</button>
+    <br/>
+    <button ng-click="myData.getAllMyBoards(item, $event)">Get all of My Boards</button>
+    <br/>
+    <button ng-click="myData.getUserWithID(item, $event)">Get current user from user id</button>
+    <br/>
+    <button ng-click="myData.addFriend(item, $event)">Add Friend</button>
+    <br/>
+    <button ng-click="myData.updateEmail(item, $event)">Update Email</button>
+    <br/>
+    <button ng-click="myData.deleteUser(item, $event)">Delete user</button>
+    <br/>
+    <label class="item item-input">
+        <span class="input-label">Id to delete</span>
+        <input type="text" ng-model="myData.idToDelete">
+    </label>
+    <br/>
+    <center>
+
+        <strong>Friend id: {{myData.friendid}}</strong><br/>
+        <strong>Press 'get all users' first to set a friend id to add</strong><br/>
+        <strong>Refresh Often</strong>
+        <br/>
+    </center>
+
 
 </div>
-<h1>Refresh Often</h1>
 <script>
     angular.module("myapp", [])
             .controller("MyController", function ($scope, $http) {
                 $scope.myData = {};
 
+                var url = "http://localhost:8080";
 
                 $scope.myData.regClick = function (item, event) {
                     var dataObj = {
@@ -48,7 +86,7 @@
                     };
                     $http.defaults.headers.common['x-auth'] = "";
                     //REGISTER A NEW USER
-                    var res = $http.post('http://localhost:8080/api/auth/register', dataObj);
+                    var res = $http.post(url + '/api/auth/register', dataObj);
                     res.success(function (data, status, headers, config) {
                         alert(JSON.stringify({data: data}));
                     });
@@ -67,10 +105,12 @@
 
                     $http.defaults.headers.common['x-auth'] = "";
                     //LOG A NEW USER IN
-                    var res = $http.post('http://localhost:8080/api/auth/login', dataObj1);
+                    var res = $http.post(url + '/api/auth/login', dataObj1);
                     res.success(function (data, status, headers, config) {
                         alert(data.tok);
                         localStorage.jwttoken = data.tok;
+                        localStorage.id = data.usr._id;
+
                     });
                     res.error(function (data, status, headers, config) {
                         alert("failure message: " + JSON.stringify({data: data}));
@@ -83,7 +123,7 @@
 
                     //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
                     $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
-                    var res = $http.post('http://localhost:8080/api/users');
+                    var res = $http.post(url + '/api/users');
                     res.success(function (data, status, headers, config) {
                         alert(JSON.stringify({data: data}));
                     });
@@ -98,9 +138,12 @@
 
                     //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
                     $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
-                    var res = $http.get('http://localhost:8080/api/users');
+                    var res = $http.get(url + '/api/users');
                     res.success(function (data, status, headers, config) {
-                        alert(JSON.stringify({data: data}));
+                        $scope.myData.users = data;
+                        localStorage.friendid = data[2]._id;
+                        localStorage.friendusername = data[2].username;
+                        $scope.myData.friendid = data[2]._id;
                     });
                     res.error(function (data, status, headers, config) {
                         alert("failure message: " + JSON.stringify({data: data}));
@@ -118,7 +161,7 @@
 
                     $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
                     console.log(localStorage.jwttoken);
-                    var res = $http.post('http://localhost:8080/api/posts', dataObj2);
+                    var res = $http.post(url + '/api/posts', dataObj2);
                     res.success(function (data, status, headers, config) {
                         alert(JSON.stringify({data: data}));
                     });
@@ -138,7 +181,7 @@
 
                     $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
                     console.log(localStorage.jwttoken);
-                    var res = $http.post('http://localhost:8080/api/boards', dataObj3);
+                    var res = $http.post(url + '/api/boards', dataObj3);
                     res.success(function (data, status, headers, config) {
                         alert(JSON.stringify({data: data}));
                     });
@@ -151,7 +194,7 @@
                 $scope.myData.getAllMyBoards = function (item, event) {
 
                     $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
-                    var res = $http.get('http://localhost:8080/api/boards');
+                    var res = $http.get(url + '/api/boards');
                     res.success(function (data, status, headers, config) {
                         alert(JSON.stringify({data: data}));
                     });
@@ -163,7 +206,7 @@
                 $scope.myData.getMyBoard = function (item, event) {
 
                     $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
-                    var res = $http.get('http://localhost:8080/api/myboard');
+                    var res = $http.get(url + '/api/myboard');
                     res.success(function (data, status, headers, config) {
                         alert(JSON.stringify({data: data}));
                     });
@@ -173,6 +216,64 @@
 
                 }
 
+                $scope.myData.getUserWithID = function (item, event) {
+
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    var res = $http.get(url + '/api/users/' + localStorage.id);
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+
+
+                }
+                $scope.myData.addFriend = function (item, event) {
+                    var dataObj4 = {
+                        friendid: localStorage.friendid
+                    };
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    var res = $http.put(url + '/api/users/' + localStorage.id, dataObj4);
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                        alert("Added friend id: " + localStorage.friendid + "\n" + "Added friend username: " + localStorage.friendusername);
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+
+
+                }
+                $scope.myData.updateEmail = function (item, event) {
+                    var dataObj5 = {
+                        email: $scope.myData.email
+                    };
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    var res = $http.put(url + '/api/users/' + localStorage.id, dataObj5);
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+                }
+
+                $scope.myData.deleteUser = function (item, event) {
+                    var dataObj6 = {
+                        delete: $scope.myData.idToDelete
+                    };
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    var res = $http.put(url + '/api/users/' + localStorage.id, dataObj6);
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+
+
+                }
             });
 </script>
 

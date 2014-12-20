@@ -18,6 +18,6 @@ module.exports = {
     sess_exp:    {message: 'Session Expired'},
     board_cre:   {message: 'Board created!'},
     board_ex:    {message: 'Board already exists'},
-    board_no:    {message: 'Board does not exists'}
-
+    board_no:    {message: 'Board does not exists'},
+    user_del:    {message: 'User deleted'}
     }
