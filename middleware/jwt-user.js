@@ -12,7 +12,7 @@ module.exports = function (req, res, next) {
                     user = null;
                 }
                 if (user.id != req.auth.id) {
-                    user = null;
+                    req.auth = null;
                 }
             });
     }

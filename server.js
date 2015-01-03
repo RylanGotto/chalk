@@ -47,7 +47,7 @@ router.route('/auth/register')
                             return res.status(401).json(jmsg.user_ex);
                         }
 
-
+                        // email / username not found, create a new user
                         var user = new DataModel.User();
                         user.username = req.body.username;
                         user.email = req.body.email;
