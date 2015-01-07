@@ -26,7 +26,8 @@ router.get('/', function (req, res) {
     res.json(jmsg.welcome);
 });
 
-var test_device = "APA91bFWBalLDEUVCg3U57ibMCtCDIN2kwsbA_3MFOnVit-jci1JqToICjECgDD5rNWkrvmbLD1l6HY1zod0u0SRt1z0NeQ-ajTqYZ4oHgSul8711A_Q7MjvFGb2GXaRiKj71RAsm9zK83KrA7pKrBLc2x8zE5fh0RMWgj-Shh5hT9UrhtKCqcI";
+var test_device = "APA91bFWBalLDEUVCg3U57ibMCtCDIN2kwsbA_3MFOnVit-jci1JqToICjECgDD5rNWkrvmbLD1l6HY1zod0u0SRt1z0NeQ" +
+    "-ajTqYZ4oHgSul8711A_Q7MjvFGb2GXaRiKj71RAsm9zK83KrA7pKrBLc2x8zE5fh0RMWgj-Shh5hT9UrhtKCqcI";
 
 gcm.sendGcmPushNotification('words',  'words', 1, [test_device]);
 
