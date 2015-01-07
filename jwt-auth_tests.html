@@ -55,10 +55,16 @@
     <br/>
     <button ng-click="myData.deleteUser(item, $event)">Delete user</button>
     <br/>
+
     <label class="item item-input">
         <span class="input-label">Id to delete</span>
         <input type="text" ng-model="myData.idToDelete">
     </label>
+    <br/>
+    <br/>
+    <button ng-click="myData.regDevice(item, $event)">Reg Device</button>
+    <br/>
+    <button ng-click="myData.delDevice(item, $event)">Del Device</button>
     <br/>
     <center>
 
@@ -229,6 +235,7 @@
 
 
                 }
+
                 $scope.myData.addFriend = function (item, event) {
                     var dataObj4 = {
                         friendid: localStorage.friendid
@@ -274,6 +281,44 @@
 
 
                 }
+
+                $scope.myData.regDevice = function (item, event) {
+                    var dataObj7 = {
+                        type: "android",
+                        token: "random token"
+                    };
+
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    console.log(localStorage.jwttoken);
+                    var res = $http.post(url + '/api/push/subscribe', dataObj7);
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+
+                }
+
+                $scope.myData.delDevice = function (item, event) {
+
+                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    console.log(localStorage.jwttoken);
+                    var res = $http.post(url + '/api/push/unsubscribe');
+                    res.success(function (data, status, headers, config) {
+                        alert(JSON.stringify({data: data}));
+                    });
+                    res.error(function (data, status, headers, config) {
+                        alert("failure message: " + JSON.stringify({data: data}));
+                    });
+
+                }
+
+
+
+
+
+
             });
 </script>
 

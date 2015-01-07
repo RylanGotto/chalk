@@ -3,8 +3,11 @@ var bodyParser = require('body-parser');
 var DataModel = require('./models/datamodel');
 var bcrypt = require('bcrypt');
 var jwt = require('jwt-simple');
-var jwtconfig = require('./jwt-config');                      // Tokens are signed for 3 mintues in milliseconds
+var config = require('./config');                      // Tokens are signed for 3 mintues in milliseconds
 var jmsg = require('./status-responses');
+var gcm = require('./gcm');
+
+
 
 
 var app = express();
@@ -23,15 +26,9 @@ router.get('/', function (req, res) {
     res.json(jmsg.welcome);
 });
 
+var test_device = "APA91bFWBalLDEUVCg3U57ibMCtCDIN2kwsbA_3MFOnVit-jci1JqToICjECgDD5rNWkrvmbLD1l6HY1zod0u0SRt1z0NeQ-ajTqYZ4oHgSul8711A_Q7MjvFGb2GXaRiKj71RAsm9zK83KrA7pKrBLc2x8zE5fh0RMWgj-Shh5hT9UrhtKCqcI";
 
-
-/***********************************************************************************************************************
- *                      Push Notification Registering
- **********************************************************************************************************************/
-
-
-
-
+gcm.sendGcmPushNotification('words',  'words', 1, [test_device]);
 
 
 
@@ -109,13 +106,56 @@ router.route('/auth/login')
                             return res.status(401).send(jmsg.inv_login);
                         }
                         var token = jwt.encode({
-                            username: user.username, exp: new Date().getTime() + jwtconfig.exp, id: user._id
-                        }, jwtconfig.secret);
+                            username: user.username, exp: new Date().getTime() + config.exp, id: user._id
+                        }, config.secret);
                         res.status(200).json({tok: token, usr: user});
                     });
             });
 
     });
+
+
+
+
+/***********************************************************************************************************************
+ *                     Registering for Push Notifications
+ **********************************************************************************************************************/
+router.route('/push/subscribe')
+
+.post(function (req, res, next) {
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+        var GcmData = new DataModel.GcmData();
+        GcmData.username = req.auth.username;
+        GcmData.type = req.body.type;
+        GcmData.token = req.body.token;
+        GcmData.save();
+        res.status(200).json(jmsg.dev_reg);
+
+    });
+
+router.route('/push/unsubscribe')
+
+    .post(function (req, res, next) {
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+
+        DataModel.GcmData.remove({
+            username: req.auth.username
+        }, function (err) {
+            if (err)
+                res.send(err);
+            res.status(200).json(jmsg.dev_del);
+        });
+
+    });
+
+
+
+
+
 
 /***********************************************************************************************************************
  *                      Users

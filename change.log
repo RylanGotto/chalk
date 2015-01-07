@@ -57,6 +57,12 @@ Dec 17, 2014
 - created tests for new features, and update the interface to streamline things a bit. <3 Angularjs!
 
 
+Jan 6, 2014
+
+- added gcmdata schema, takes type of device android/ios, username, and device token
+- added route for registering a device notifications
+- added route for un-registering a device for gcm notifications
+
 TODO: add check to make sure user id in token matches user id passed in as a param
 TODO: add update password
 
