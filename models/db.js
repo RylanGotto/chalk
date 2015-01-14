@@ -1,6 +1,6 @@
 var mongoose = require('../node_modules/mongoose');
 
-mongoose.connect('mongodb://dbuser:dbuser@ds061620.mongolab.com:61620/chalk', function () {
+mongoose.connect('mongodb://localhost:27017/chalk1', function () {
     console.log('chalkin it up!');
 });
 module.exports = mongoose;

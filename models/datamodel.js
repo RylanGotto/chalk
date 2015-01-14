@@ -26,14 +26,21 @@ var UserSchema = new Schema({
     password: {type: String, required: true, select: false},
     email: {type: String,  required: true},
     profileImage: String,
-    friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}]
+    friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
+    time : { type : Date, default: Date.now }
+});
+
+var AnalyticsSchema = new Schema({
+    name: {type: String},
+    lastTimeQueried: {type:Date, default: Date.now, required: true} 
 });
 
 
 var DataModel = {
     Post: db.model('Post', PostSchema),
     User: db.model('User', UserSchema),
-    Board: db.model('Board', BoardSchema)
+    Board: db.model('Board', BoardSchema),
+    Analytic: db.model('Analytic', AnalyticsSchema)
 };
 
 module.exports = DataModel;

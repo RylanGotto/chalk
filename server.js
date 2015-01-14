@@ -219,7 +219,7 @@ router.route('/boards')
                 board.owner = req.auth.id;
                 board.privacyLevel = String(req.body.privacyLevel);
                 board.timeout = req.body.timeout;
-                board.maxTTL = req.body.maxTTL
+                board.maxTTL = req.body.maxTTL;
 
                 // save the bear and check for errors
                 board.save(function (err) {
@@ -327,7 +327,36 @@ router.route('/posts')
 
     });
 
+router.route('/analytics/newusers')
 
+    
+    .post(function (req, res, next) {
+        var date = "";
+        DataModel.Analytic.findOne({name: {$in: ['stat']}}).
+        exec(function(err, analytic){
+            if(!analytic){
+                var analytic = new DataModel.Analytic();
+                analytic.name = 'stat';
+                analytic.save();
+            }
+            if(req.body.date){
+                date = req.body.date;
+            }else{
+                date = analytic.lastTimeQueried;
+            }
+            
+            DataModel.User.find({time:{$gte: date.toISOString()}}).exec(function(err, users){
+                if(users){
+                    analytic.lastTimeQueried = new Date().toISOString();
+                    analytic.save();
+                    res.status(200).json(users);
+                }
+            });
+
+
+        });
+
+    });
 
 
 //not being user yet.
