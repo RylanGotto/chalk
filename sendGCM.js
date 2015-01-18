@@ -1,6 +1,8 @@
 var gcm = require('node-gcm');
 var message = new gcm.Message();
- 
+
+
+console.log(gcm);
 //API Server Key
 var sender = new gcm.Sender('AIzaSyC3qiAm4ehh3dhmpDwRE7x6CWej4RaScwQ');
 var registrationIds = [];
@@ -12,7 +14,7 @@ message.addData('msgcnt','3'); // Shows up in the notification in the status bar
 
 //message.addData('soundname','beep.wav'); //Sound to play upon notification receipt - put in the www folder in app - may not work
 //message.collapseKey = 'demo';
-//message.delayWhileIdle = true; //Default is false
+message.delayWhileIdle = true; //Default is false
 message.timeToLive = 3000;// Duration in seconds to hold in GCM and retry before timing out. Default 4 weeks (2,419,200 seconds) if not specified.
  
 // At least one reg id/token is required

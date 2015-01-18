@@ -26,10 +26,9 @@ router.get('/', function (req, res) {
     res.json(jmsg.welcome);
 });
 
-var test_device = "APA91bFWBalLDEUVCg3U57ibMCtCDIN2kwsbA_3MFOnVit-jci1JqToICjECgDD5rNWkrvmbLD1l6HY1zod0u0SRt1z0NeQ" +
-    "-ajTqYZ4oHgSul8711A_Q7MjvFGb2GXaRiKj71RAsm9zK83KrA7pKrBLc2x8zE5fh0RMWgj-Shh5hT9UrhtKCqcI";
+var test_device = "APA91bGdgDDS2et0tQuPraAyzlY1cx8EcxQ_OUaHAYmrCbXcYV211qG3XWfQhjLsmB5mkRy6l4C2AVV5GIDdR8I9ztuK05HPxC7e7fzHxzXB2P7yXuDyzX6a26wwDbVv5rSbZ_rHHc4Nu6B35vD6Zp-e8tfqB_zAY119YmBfFwPPz0_7VzslTxM";
 
-gcm.sendGcmPushNotification('words',  'words', 1, [test_device]);
+gcm.sendGcmPushNotification('You have a new post on myBoard', 'Chalk', [test_device], 0);
 
 
 
@@ -44,7 +43,7 @@ router.route('/auth/register')
                 if (err) {
                     return next(err);
                 }
-                ;
+
                 if (user) {
                     return res.status(401).json(jmsg.email_ex);
                 }
@@ -127,6 +126,7 @@ router.route('/push/subscribe')
         if (!req.auth) {
             return res.status(401).send();
         }
+console.log(req.body.token);
         var GcmData = new DataModel.GcmData();
         GcmData.username = req.auth.username;
         GcmData.type = req.body.type;
@@ -173,7 +173,6 @@ router.route('/users')
             if (err) {
                 return next(err);
             }
-            console.log(user);
             res.status(200).json(user);
         });
     })

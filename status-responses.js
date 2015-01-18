@@ -3,7 +3,6 @@
  */
 
 module.exports = {
-
     welcome:     {message: 'hooray! welcome to our api!'},
     reg:         {message: 'Registered'},
     dev_reg:     {message: 'Device Registered'},
