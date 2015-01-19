@@ -3,9 +3,9 @@ var bodyParser = require('body-parser');
 var DataModel = require('./models/datamodel');
 var bcrypt = require('bcrypt');
 var jwt = require('jwt-simple');
-var jwtconfig = require('./jwt-config');                      // Tokens are signed for 3 mintues in milliseconds
+var jwtconfig = require('./jwt-config');                        // Tokens are signed for 3 mintues in milliseconds
 var jmsg = require('./status-responses');
-
+var expiry = require('./expiry');                                 // expire the posts
 
 var app = express();
 
@@ -14,6 +14,7 @@ app.use(require('./middleware/authtransform'));  //Set JWT middleware
 app.use(require('./middleware/jwt-expire'));     //Set JWT-Token Expiration middleware
 app.use(require('./middleware/jwt-user'));       //Set JWT-User Integrity middleware
 app.use(require('./middleware/cors'));           //Set CORS middleware
+
 
 var port = process.env.PORT || 8080; 		     // set our port
 var router = express.Router();
@@ -211,14 +212,14 @@ router.route('/boards')
                     return next(err);
                 }
                 if (board) {
-                    return res.status(401).json(jmsg.board_ex);
+                    return res.status(409).json(jmsg.board_ex);
                 }
 
                 var board = new DataModel.Board();
                 board.tag = req.body.tag;
                 board.owner = req.auth.id;
                 board.privacyLevel = String(req.body.privacyLevel);
-                board.timeout = req.body.timeout;
+                board.timeout = expiry.convertToMilliseconds(req.body.timeout);
                 board.maxTTL = req.body.maxTTL
 
                 // save the bear and check for errors
@@ -247,6 +248,7 @@ router.route('/boards')
                 if (!board) {
                     return res.status(401).json(jmsg.board_no);
                 }
+                expiry.pruneArray(board);
                 res.status(200).json(board);
             });
     });
@@ -257,7 +259,7 @@ router.route('/myboard')
         if (!req.auth) {
             return res.status(401).send();
         }
-        var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content time'}, {path:"owner", select:'username'}];
+        var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content dateCreated'}, {path:"owner", select:'username'}];
         DataModel.Board.find({tag: {$in: [req.auth.username + "'s Board"]}}).populate(populateQuery)
             .exec(function (err, board) {
                 if (err) {
@@ -266,6 +268,9 @@ router.route('/myboard')
                 if (!board) {
                     return res.status(401).json(jmsg.board_no);
                 }
+                board.forEach(function(b){
+                    expiry.pruneArray(b.posts);
+                });
                 res.status(200).json(board);
             });
     });
@@ -280,10 +285,9 @@ router.route('/boards/:board_tag')
         }
         DataModel.Board.find({tag: {$in: [req.params.board_tag]}}).populate("posts")
             .exec(function (err, board){
+                expiry.pruneArray(board.posts);
                 res.status(200).json(board);
             });
-
-
     });
 
 
@@ -312,7 +316,11 @@ router.route('/posts')
                 post.content = req.body.content;  // set the post content (comes from the request)
                 post.owner = req.auth.username;
                 post.privacyLevel = req.body.privacyLevel;
-                post.timeout = req.body.timeout;
+                if( /^\+?[1-9]\d*$/.test(req.body.timeout) ) {
+                    post.timeout = expiry.convertToMilliseconds(req.body.timeout);
+                } else {
+                    return res.status(406).json(req.body.timeout + " must be positive integer");
+                }
 
                 // save the post and check for errors
                 post.save(function (err) {
