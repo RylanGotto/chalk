@@ -171,43 +171,45 @@
                 }
 
                 $scope.myData.createPost = function (item, event) {
-                    var dataObj2 = {
-                        tag: 'ry\'s Board',
-                        content: "A Test post",
-                        privacyLevel: 1,
-                        timeout: 9
-                    };
+                    for(var i = 1; i < 11; i++ ) {
+                        var dataObj2 = {
+                            tag: 'testy7\'s Board',
+                            content: "A Test post",
+                            privacyLevel: 1,
+                            timeout: i
+                        };
 
-                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
-                    console.log(localStorage.jwttoken);
-                    var res = $http.post(url + '/api/posts', dataObj2);
-                    res.success(function (data, status, headers, config) {
-                        alert(JSON.stringify({data: data}));
-                    });
-                    res.error(function (data, status, headers, config) {
-                        alert("failure message: " + JSON.stringify({data: data}));
-                    });
-
+                        $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                        console.log('post with ' + i + ' min left submitted');
+                        var res = $http.post(url + '/api/posts', dataObj2);
+                        res.success(function (data, status, headers, config) {
+                            console.log(JSON.stringify({data: data}));
+                        });
+                        res.error(function (data, status, headers, config) {
+                            alert("failure message: " + JSON.stringify({data: data}));
+                        });
+                    }
                 }
                 $scope.myData.createBoard = function (item, event) {
-                    var dataObj3 = {
-                        tag: 'test1',
-                        owner: "A owner",
-                        privacyLevel: 1,
-                        timeout: 9,
-                        maxTTL: 1
-                    };
-
-                    $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                    for( var i = 1; i < 10; i++) {
+                        var dataObj3 = {
+                            tag: 'BOARDNAME'+Math.floor(Math.random()*1000000),
+                            owner: "A owner",
+                            privacyLevel: 1,
+                            timeout: i,
+                            maxTTL: 1
+                        };
+                        console.log('board: ' + dataObj3);
+                        $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+                        var res = $http.post(url + '/api/boards', dataObj3);
+                        res.success(function (data, status, headers, config) {
+                            alert(JSON.stringify({data: data}));
+                        });
+                        res.error(function (data, status, headers, config) {
+                            alert("failure message: " + JSON.stringify({data: data}));
+                        });
+                    }
                     console.log(localStorage.jwttoken);
-                    var res = $http.post(url + '/api/boards', dataObj3);
-                    res.success(function (data, status, headers, config) {
-                        alert(JSON.stringify({data: data}));
-                    });
-                    res.error(function (data, status, headers, config) {
-                        alert("failure message: " + JSON.stringify({data: data}));
-                    });
-
                 }
 
                 $scope.myData.getAllMyBoards = function (item, event) {
