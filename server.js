@@ -3,16 +3,17 @@ var bodyParser = require('body-parser');
 var DataModel = require('./models/datamodel');
 var bcrypt = require('bcrypt');
 var jwt = require('jwt-simple');
-var jwtconfig = require('./jwt-config');                        // Tokens are signed for 3 mintues in milliseconds
+var jwtconfig = require('./config');                        // Tokens are signed for 3 mintues in milliseconds
 var jmsg = require('./status-responses');
 var expiry = require('./expiry');                                 // expire the posts
+var gcm = require('./gcm');
 
 var app = express();
 
 app.use(bodyParser.json());
 app.use(require('./middleware/authtransform'));  //Set JWT middleware
 app.use(require('./middleware/jwt-expire'));     //Set JWT-Token Expiration middleware
-app.use(require('./middleware/jwt-user'));       //Set JWT-User Integrity middleware
+//app.use(require('./middleware/jwt-user'));       //Set JWT-User Integrity middleware
 app.use(require('./middleware/cors'));           //Set CORS middleware
 
 
@@ -23,6 +24,10 @@ var router = express.Router();
 router.get('/', function (req, res) {
     res.json(jmsg.welcome);
 });
+
+
+
+
 
 /***********************************************************************************************************************
  *                      Auth
@@ -69,7 +74,9 @@ router.route('/auth/register')
                                 userBoard.tag = user.username + "'s Board";
                                 userBoard.timeout = 0;
                                 userBoard.save();
-
+                                var gcmData = DataModel.GcmData();
+                                gcmData.username = user.username;
+                                gcmData.save();
                                 res.status(200).json(jmsg.reg);
                             });
                         });
@@ -105,6 +112,55 @@ router.route('/auth/login')
             });
 
     });
+
+
+
+router.route('/push/subscribe')
+
+    .post(function (req, res, next) {
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+        console.log(req.auth);
+        console.log(142341341242134);
+
+        DataModel.GcmData.findOne({username: req.auth.username}, function(err, data){
+                if(data) {
+                    console.log(1);
+                    data.token = req.body.token;
+                    data.type = req.body.type;
+                    console.log(data);
+                    data.save();
+                    return res.status(200).json(jmsg.dev_reg);
+                }else{
+                    res.status(401);
+                }
+        });
+
+
+
+
+
+    });
+
+router.route('/push/unsubscribe')
+
+    .post(function (req, res, next) {
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+
+        DataModel.GcmData.remove({
+            username: req.auth.username
+        }, function (err) {
+            if (err)
+                res.send(err);
+            res.status(200).json(jmsg.dev_del);
+        });
+
+    });
+
+
 
 /***********************************************************************************************************************
  *                      Users
@@ -303,7 +359,7 @@ router.route('/posts')
             return res.status(401).send();
         }
 
-        DataModel.Board.findOne({tag: {$in: [req.body.tag]}})
+        DataModel.Board.findOne({tag: {$in: [req.body.tag]}}).populate("owner")
             .exec(function (err, board) {
                 if (err) {
                     return next(err);
@@ -327,6 +383,11 @@ router.route('/posts')
                     if (err) {
                         return (next(err));
                     }
+                    DataModel.GcmData.findOne({username: board.owner.username}, function(err, data){
+                        console.log(data);
+                        if(data) {
+                            gcm.sendGcmPushNotification('You have a new post on myBoard', 'Chalk', [data.token], 0);
+                        } });
                     board.posts.push(post._id);
                     board.save();
                     res.status(200).json(jmsg.post_cre);

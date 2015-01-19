@@ -29,11 +29,19 @@ var UserSchema = new Schema({
     friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}]
 });
 
+var GcmDataSchema = new Schema({
+    username: {type: String,  ref: 'User', unique:true},
+    type:'String',
+    token: 'String'
+});
+
+
 
 var DataModel = {
     Post: db.model('Post', PostSchema),
     User: db.model('User', UserSchema),
-    Board: db.model('Board', BoardSchema)
+    Board: db.model('Board', BoardSchema),
+    GcmData: db.model('GcmData', GcmDataSchema)
 };
 
 module.exports = DataModel;
