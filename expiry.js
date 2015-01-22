@@ -14,6 +14,7 @@ module.exports = {
                 if (module.exports.isExpired(article.dateCreated, article.timeout)) {
                     badArticles.push(article);
                 } else {
+                    console.log(article.tag + " Will expire in " +(((article.dateCreated + article.timeout)-Date.now())) /60000);
                     goodArticles.push(article);
                 }
             });
@@ -56,6 +57,7 @@ module.exports = {
      * @returns {number}
      */
     convertToMilliseconds: function(time) {
+        console.log('timeout converted to ' + (time * 60000) );
         return time * 60000;
     },
 
@@ -69,7 +71,9 @@ module.exports = {
         // Don't expire users boards
         if( timeout === 0 )
             return false;
-        else
-            return ( dateCreated + timeout <= Date.now() );
+        else {
+            console.log('why expire? ' + parseInt( dateCreated + timeout ) + ' - vs - ' + parseInt(Date.now()) + ' is: ' + ( parseInt( dateCreated + timeout ) <= parseInt(Date.now()) ) );
+            return ( ( dateCreated + timeout ) <= Date.now() );
+        }
     }
 }

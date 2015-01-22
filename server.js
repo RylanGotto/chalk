@@ -277,6 +277,7 @@ router.route('/boards')
                 board.privacyLevel = String(req.body.privacyLevel);
                 board.timeout = expiry.convertToMilliseconds(req.body.timeout);
                 board.maxTTL = req.body.maxTTL
+                board.dateCreated  = Date.now();
 
                 // save the bear and check for errors
                 board.save(function (err) {
@@ -324,10 +325,11 @@ router.route('/myboard')
                 if (!board) {
                     return res.status(401).json(jmsg.board_no);
                 }
+                var posts;
                 board.forEach(function(b){
-                    expiry.pruneArray(b.posts);
+                    posts = expiry.pruneArray(b.posts);
                 });
-                res.status(200).json(board);
+                res.status(200).json(posts);
             });
     });
 
@@ -372,6 +374,8 @@ router.route('/posts')
                 post.content = req.body.content;  // set the post content (comes from the request)
                 post.owner = req.auth.username;
                 post.privacyLevel = req.body.privacyLevel;
+                post.dateCreated  = Date.now();
+
                 if( /^\+?[1-9]\d*$/.test(req.body.timeout) ) {
                     post.timeout = expiry.convertToMilliseconds(req.body.timeout);
                 } else {

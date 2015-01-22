@@ -152,10 +152,10 @@
                 }
 
                 $scope.myData.createPost = function (item, event) {
-                    for(var i = 1; i < 11; i++ ) {
+                    for(var i = 1; i < 4; i++ ) {
                         var dataObj2 = {
-                            tag: 'testy7\'s Board',
-                            content: "A Test post",
+                            tag: 'ry\'s Board',
+                            content: "A Testy post",
                             privacyLevel: 1,
                             timeout: i
                         };
@@ -172,12 +172,13 @@
                     }
                 }
                 $scope.myData.createBoard = function (item, event) {
-                    for( var i = 1; i < 10; i++) {
+
+                    for( var i = 1; i < 3; i++) {
                         var dataObj3 = {
-                            tag: 'BOARDNAME'+Math.floor(Math.random()*1000000),
+                            tag: 'faaaack-'+Math.floor(Math.random()*1000000),
                             owner: "A owner",
                             privacyLevel: 1,
-                            timeout: i,
+                            timeout: 1,
                             maxTTL: 1
                         };
                         console.log('board: ' + dataObj3);
