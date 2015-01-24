@@ -1,6 +1,6 @@
 var mongoose = require('../node_modules/mongoose');
-
-mongoose.connect('mongodb://localhost:27017/chalk3', function () {
-    console.log('chalkin it up!');
+var dbName = "cc2";
+mongoose.connect('mongodb://localhost:27017/' + dbName, function () {
+    console.log('chalkin it up on ' + dbName + "!");
 });
 module.exports = mongoose;

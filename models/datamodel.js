@@ -26,21 +26,24 @@ var UserSchema = new Schema({
     password: {type: String, required: true, select: false},
     email: {type: String,  required: true},
     profileImage: String,
-    friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}]
+    friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
+    type: {type: 'String'},
+    token: {type: 'String'}
 });
 
-var GcmDataSchema = new Schema({
-    username: {type: String, required: true, ref: 'User', unique:true},
-    type: {type: 'String', required: true},
-    token: {type: 'String', required: true}
+var FriendRequestSchema = new Schema({
+    requesterName: String,
+    requesteeeName: String
 });
+
+
 
 
 var DataModel = {
     Post: db.model('Post', PostSchema),
     User: db.model('User', UserSchema),
     Board: db.model('Board', BoardSchema),
-    GcmData: db.model('GcmData', GcmDataSchema)
+    FriendRequest: db.model('FriendRequest', FriendRequestSchema)
 };
 
 module.exports = DataModel;

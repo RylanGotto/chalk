@@ -15,7 +15,7 @@ var app = express();
 app.use(bodyParser.json());
 app.use(require('./middleware/authtransform'));  //Set JWT middleware
 app.use(require('./middleware/jwt-expire'));     //Set JWT-Token Expiration middleware
-app.use(require('./middleware/jwt-user'));       //Set JWT-User Integrity middleware
+//app.use(require('./middleware/jwt-user'));       //Set JWT-User Integrity middleware
 app.use(require('./middleware/cors'));           //Set CORS middleware
 
 var port = process.env.PORT || 8080; 		     // set our port
@@ -26,9 +26,9 @@ router.get('/', function (req, res) {
     res.json(jmsg.welcome);
 });
 
-var test_device = "APA91bGdgDDS2et0tQuPraAyzlY1cx8EcxQ_OUaHAYmrCbXcYV211qG3XWfQhjLsmB5mkRy6l4C2AVV5GIDdR8I9ztuK05HPxC7e7fzHxzXB2P7yXuDyzX6a26wwDbVv5rSbZ_rHHc4Nu6B35vD6Zp-e8tfqB_zAY119YmBfFwPPz0_7VzslTxM";
+//var test_device = "APA91bGdgDDS2et0tQuPraAyzlY1cx8EcxQ_OUaHAYmrCbXcYV211qG3XWfQhjLsmB5mkRy6l4C2AVV5GIDdR8I9ztuK05HPxC7e7fzHxzXB2P7yXuDyzX6a26wwDbVv5rSbZ_rHHc4Nu6B35vD6Zp-e8tfqB_zAY119YmBfFwPPz0_7VzslTxM";
 
-gcm.sendGcmPushNotification('You have a new post on myBoard', 'Chalk', [test_device], 0);
+//gcm.sendGcmPushNotification('You have a new post on myBoard', 'Chalk', [test_device], 0);
 
 
 
@@ -126,15 +126,24 @@ router.route('/push/subscribe')
         if (!req.auth) {
             return res.status(401).send();
         }
-console.log(req.body.token);
-        var GcmData = new DataModel.GcmData();
-        GcmData.username = req.auth.username;
-        GcmData.type = req.body.type;
-        GcmData.token = req.body.token;
-        GcmData.save();
-        res.status(200).json(jmsg.dev_reg);
+        DataModel.User.findOne({_id: {$in: [req.auth.id]}}).exec(function (err, user) {
+            if (err) {
+                return next(err);
+            }
+            if(user){
+                user.type = req.body.type;
+                user.token = req.body.token;
+                user.save();
+                console.log(user.username + " has registered a device");
+            }
 
+        });
+        res.status(200).json(jmsg.dev_reg);
     });
+
+
+
+
 
 router.route('/push/unsubscribe')
 
@@ -214,11 +223,24 @@ router.route('/users/:user_id')
             if (err) {
                 return next(err);
             }
-            if(req.body.friendid){
-                user.friends.push(req.body.friendid);
-                user.save();
-                console.log(user);
-                res.status(200).json({message: req.body.frndname + " was added to your friends list"});
+            if(req.body.friendusername){
+                var friendRequest = DataModel.FriendRequest();
+                friendRequest.requesteeeName = req.body.friendusername;
+                friendRequest.requesterName =  user.username;
+                friendRequest.save();
+                DataModel.User.findOne({username: {$in: [req.body.friendusername]}}).exec( function (err, user) {
+                    if (err) {
+                        console.log("Gcm data not found");
+                    }
+                    if (user){
+                       var gcmMessage = "You have a friend request from " + user.username;
+                       gcm.sendGcmPushNotification(gcmMessage, [user.token], 2, user.username);
+                       console.log("GCM Friend request sent to " + req.body.friendusername);
+                    }
+                });
+
+
+                res.status(200).json({message: req.body.friendusername + " was added sent a friend request!"});
             }
             if(req.body.email){
                 user.email = req.body.email;
@@ -227,7 +249,7 @@ router.route('/users/:user_id')
             }
             if(req.body.delete){
 
-            var message;
+
                 DataModel.User.findOne({_id: {$in: [req.body.delete]}}).remove().exec( function (err) {
                     if (err) {
                         res.status(200).json(err);
@@ -244,7 +266,77 @@ router.route('/users/:user_id')
 
 
     });
+/***********************************************************************************************************************
+ *                      Friend Requests
+ **********************************************************************************************************************/
+router.route('/friendRequest')
 
+    .get(function(req, res, next){
+        if (!req.auth) {
+            return res.status(401).json(jmsg.toke_unauth);
+
+        }
+        DataModel.FriendRequest.find({requesteeeName: {$in: [req.auth.username]}}).exec(function(err, requests){
+            if(requests){
+                console.log("Friend requests found for user " + req.auth.username);
+                return res.status(200).json(requests);
+            } else {
+                console.log("No Friend requests found for user " + req.auth.username);
+                return res.status(401).json();
+            }
+        });
+    })
+    .post(function(req, res, next){
+        if (!req.auth) {
+            return res.status(401).json(jmsg.toke_unauth);
+        }
+        if(req.body.decision){
+            console.log(req.body.friendRequestID);
+            DataModel.FriendRequest.findOne({_id: {$in: [req.body.friendRequestID]}})
+                .exec(function (err, request) {
+                    if(request){
+                        console.log("Friend requests found for user " + req.auth.username);
+
+                        DataModel.User.find({username: {$in: [request.requesteeeName, request.requesterName]}}).exec(function(err, users){
+                            if(users){
+
+                                users[0].friends.push(users[1]);
+                                users[0].save();
+                                users[1].friends.push(users[0]);
+                                users[1].save();
+
+                                console.log(users[0].username + " has added " + users[1].username + " to their friends list.");
+                                console.log(users[1].username + " has added " + users[0].username + " to their friends list.");
+
+                                var gcmMessage = users[0].username + " has accpeted your friend request!";
+                                gcm.sendGcmPushNotification(gcmMessage, [users[1].token], 1, users[0].username);
+
+                                return res.status(200).json(request);
+                            } else {
+                                console.log("No users found with those usernames ");
+                                return res.status(401).json();
+                            }
+                        });
+
+                    } else {
+                        console.log("No Friend requests found for user " + req.auth.username);
+                        return res.status(401).json();
+                    }
+                });
+
+        } else {
+            console.log("Friend request denied by " + req.auth.username);
+        }
+        DataModel.FriendRequest.findOne({_id: {$in: [req.body.friendRequestID]}}).remove(function(err, request){
+            if(request){
+                console.log("Friend request removed");
+                return res.status(200).json("fail");
+            } else {
+                console.log("No friend requests to remove");
+                return res.status(200).json("fail");
+            }
+        });
+    });
 
 /***********************************************************************************************************************
  *                      Boards
@@ -359,7 +451,6 @@ router.route('/posts')
                 if (!board) {
                     return res.status(401).json(jmsg.board_no);
                 }
-                console.log(req.auth);
                 var post = new DataModel.Post();        // create a new instance of the post model
                 post.content = req.body.content;  // set the post content (comes from the request)
                 post.owner = req.auth.username;
