@@ -230,7 +230,7 @@ router.route('/users/:user_id')
                 friendRequest.save();
                 DataModel.User.findOne({username: {$in: [req.body.friendusername]}}).exec( function (err, user) {
                     if (err) {
-                        console.log("Gcm data not found");
+                        console.log("GCM data not found");
                     }
                     if (user){
                        var gcmMessage = "You have a friend request from " + user.username;
