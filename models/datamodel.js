@@ -8,16 +8,16 @@ var BoardSchema = new Schema({
     owner: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     maxTTL: Number,
     tag: String,
-    timeout: Number,
-    time : { type : Date, default: Date.now }
+    timeout: Number, // Time in minutes that the post lasts for
+    dateCreated : { type : Number, default: Date.now() }
 });
 
 var PostSchema = new Schema({
     content: String,
     owner: {type:String, ref: 'User'},
     privacyLevel: String,
-    timeout: Number,
-    time : { type : Date, default: Date.now }
+    timeout: Number, //Time in minutes that the post lasts for
+    dateCreated : { type : Number, default: Date.now() }
 });
 
 
@@ -35,6 +35,9 @@ var FriendRequestSchema = new Schema({
     requesterName: String,
     requesteeeName: String
 });
+
+
+
 
 
 

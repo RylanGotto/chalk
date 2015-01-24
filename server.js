@@ -6,7 +6,7 @@ var jwt = require('jwt-simple');
 var config = require('./config');                      // Tokens are signed for 3 mintues in milliseconds
 var jmsg = require('./status-responses');
 var gcm = require('./gcm');
-
+var expiry = require('./expiry');
 
 
 
@@ -18,6 +18,7 @@ app.use(require('./middleware/jwt-expire'));     //Set JWT-Token Expiration midd
 //app.use(require('./middleware/jwt-user'));       //Set JWT-User Integrity middleware
 app.use(require('./middleware/cors'));           //Set CORS middleware
 
+
 var port = process.env.PORT || 8080; 		     // set our port
 var router = express.Router();
 
@@ -26,9 +27,9 @@ router.get('/', function (req, res) {
     res.json(jmsg.welcome);
 });
 
-//var test_device = "APA91bGdgDDS2et0tQuPraAyzlY1cx8EcxQ_OUaHAYmrCbXcYV211qG3XWfQhjLsmB5mkRy6l4C2AVV5GIDdR8I9ztuK05HPxC7e7fzHxzXB2P7yXuDyzX6a26wwDbVv5rSbZ_rHHc4Nu6B35vD6Zp-e8tfqB_zAY119YmBfFwPPz0_7VzslTxM";
 
-//gcm.sendGcmPushNotification('You have a new post on myBoard', 'Chalk', [test_device], 0);
+
+
 
 
 
@@ -77,7 +78,6 @@ router.route('/auth/register')
                                 userBoard.tag = user.username + "'s Board";
                                 userBoard.timeout = 0;
                                 userBoard.save();
-
                                 res.status(200).json(jmsg.reg);
                             });
                         });
@@ -278,7 +278,7 @@ router.route('/friendRequest')
         }
         DataModel.FriendRequest.find({requesteeeName: {$in: [req.auth.username]}}).exec(function(err, requests){
             if(requests){
-                console.log("Friend requests found for user " + req.auth.username);
+                console.log(requests.length + " Friend requests found for user " + req.auth.username);
                 return res.status(200).json(requests);
             } else {
                 console.log("No Friend requests found for user " + req.auth.username);
@@ -355,15 +355,16 @@ router.route('/boards')
                     return next(err);
                 }
                 if (board) {
-                    return res.status(401).json(jmsg.board_ex);
+                    return res.status(409).json(jmsg.board_ex);
                 }
 
                 var board = new DataModel.Board();
                 board.tag = req.body.tag;
                 board.owner = req.auth.id;
                 board.privacyLevel = String(req.body.privacyLevel);
-                board.timeout = req.body.timeout;
+                board.timeout = expiry.convertToMilliseconds(req.body.timeout);
                 board.maxTTL = req.body.maxTTL
+                board.dateCreated  = Date.now();
 
                 // save the bear and check for errors
                 board.save(function (err) {
@@ -391,6 +392,7 @@ router.route('/boards')
                 if (!board) {
                     return res.status(401).json(jmsg.board_no);
                 }
+                expiry.pruneArray(board);
                 res.status(200).json(board);
             });
     });
@@ -401,8 +403,8 @@ router.route('/myboard')
         if (!req.auth) {
             return res.status(401).send();
         }
-        var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content time'}, {path:"owner", select:'username'}];
-        DataModel.Board.find({tag: {$in: [req.auth.username + "'s Board"]}}).populate(populateQuery)
+        var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content dateCreated'}, {path:"owner", select:'username'}];
+        DataModel.Board.findOne({tag: {$in: [req.auth.username + "'s Board"]}}).populate(populateQuery)
             .exec(function (err, board) {
                 if (err) {
                     return next(err);
@@ -410,7 +412,9 @@ router.route('/myboard')
                 if (!board) {
                     return res.status(401).json(jmsg.board_no);
                 }
-                res.status(200).json(board);
+
+                var posts = expiry.pruneArray(board.posts);
+                res.status(200).json(posts);
             });
     });
 
@@ -424,10 +428,9 @@ router.route('/boards/:board_tag')
         }
         DataModel.Board.find({tag: {$in: [req.params.board_tag]}}).populate("posts")
             .exec(function (err, board){
+                expiry.pruneArray(board.posts);
                 res.status(200).json(board);
             });
-
-
     });
 
 
@@ -443,7 +446,7 @@ router.route('/posts')
             return res.status(401).send();
         }
 
-        DataModel.Board.findOne({tag: {$in: [req.body.tag]}})
+        DataModel.Board.findOne({tag: {$in: [req.body.tag]}}).populate("owner")
             .exec(function (err, board) {
                 if (err) {
                     return next(err);
@@ -455,13 +458,25 @@ router.route('/posts')
                 post.content = req.body.content;  // set the post content (comes from the request)
                 post.owner = req.auth.username;
                 post.privacyLevel = req.body.privacyLevel;
-                post.timeout = req.body.timeout;
+                post.dateCreated  = Date.now();
+
+                if( /^\+?[1-9]\d*$/.test(req.body.timeout) ) {
+                    post.timeout = expiry.convertToMilliseconds(req.body.timeout);
+                } else {
+                    return res.status(406).json(req.body.timeout + " must be positive integer");
+                }
 
                 // save the post and check for errors
                 post.save(function (err) {
                     if (err) {
                         return (next(err));
                     }
+                    DataModel.User.findOne({username: board.owner.username}, function(err, user){
+                        if(user) {
+                        	var gcmMessage = 'You have a new post on myBoard from ' + req.auth.username;
+                            gcm.sendGcmPushNotification(gcmMessage , [user.token], 0, req.auth.username);
+                            console.log(req.auth.username + " posted on " + user.username +"'s Board");
+                        } });
                     board.posts.push(post._id);
                     board.save();
                     res.status(200).json(jmsg.post_cre);

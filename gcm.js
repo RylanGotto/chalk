@@ -7,7 +7,7 @@ var config = require('./config');
 
 
 sendGcmPushNotification = function (msg, registrationIds, type, senderName){
-    var message = new gcm.Message();
+    var message = new gcm.Message({collapseKey:"demo"});
     var sender = new gcm.Sender(config.gcm_apikey);
 
     message.addData('message', msg);
@@ -17,7 +17,7 @@ sendGcmPushNotification = function (msg, registrationIds, type, senderName){
     message.addData('username', senderName)
     message.timeToLive = 3000;
     //message.delayWhileIdle = true;
-    return sender.send(message, registrationIds, 4, function (result) {
+    sender.send(message, registrationIds, 4, function (result) {
        console.log(result); //null is actually success
        return result;
     });
