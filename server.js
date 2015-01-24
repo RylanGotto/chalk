@@ -311,16 +311,16 @@ router.route('/friendRequest')
                                 var gcmMessage = users[0].username + " has accpeted your friend request!";
                                 gcm.sendGcmPushNotification(gcmMessage, [users[1].token], 1, users[0].username);
 
-                                return res.status(200).json(request);
+                                //return res.status(200).json(request);
                             } else {
                                 console.log("No users found with those usernames ");
-                                return res.status(401).json();
+
                             }
                         });
 
                     } else {
                         console.log("No Friend requests found for user " + req.auth.username);
-                        return res.status(401).json();
+
                     }
                 });
 
