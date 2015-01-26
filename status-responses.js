@@ -3,9 +3,10 @@
  */
 
 module.exports = {
-
     welcome:     {message: 'hooray! welcome to our api!'},
     reg:         {message: 'Registered'},
+    dev_reg:     {message: 'Device Registered'},
+    dev_del:     {message: 'Device Deleted'},
     login:       {message: 'Logged in'},
     logout:      {message: 'Logged out'},
     inv_login:   {message: 'Incorrect user name or password'},

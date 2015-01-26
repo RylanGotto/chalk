@@ -11,7 +11,7 @@ module.exports = function (req, res, next) {
                 if (!user) {
                     user = null;
                 }
-                if (user.id != req.auth.id) {
+                if (user._id != req.auth.id) {
                     req.auth = null;
                 }
             });

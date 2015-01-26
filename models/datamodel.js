@@ -9,7 +9,7 @@ var BoardSchema = new Schema({
     maxTTL: Number,
     tag: String,
     timeout: Number, // Time in minutes that the post lasts for
-    dateCreated : { type : Number, default: Date.now() }
+    dateCreated : { type : Number}
 });
 
 var PostSchema = new Schema({
@@ -17,7 +17,7 @@ var PostSchema = new Schema({
     owner: {type:String, ref: 'User'},
     privacyLevel: String,
     timeout: Number, //Time in minutes that the post lasts for
-    dateCreated : { type : Number, default: Date.now() }
+    dateCreated : { type : Number }
 });
 
 
@@ -27,20 +27,30 @@ var UserSchema = new Schema({
     email: {type: String,  required: true},
     profileImage: String,
     friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
-    time : { type : Date, default: Date.now }
-});
+    type: {type: 'String'},
+    token: {type: 'String'}
 
 var AnalyticsSchema = new Schema({
     name: {type: String},
     lastTimeQueried: {type:Date, default: Date.now, required: true} 
 });
 
+var FriendRequestSchema = new Schema({
+    requesterName: String,
+    requesteeeName: String
+});
+
+
+
+
+
+
 
 var DataModel = {
     Post: db.model('Post', PostSchema),
     User: db.model('User', UserSchema),
     Board: db.model('Board', BoardSchema),
-    Analytic: db.model('Analytic', AnalyticsSchema)
+    FriendRequest: db.model('FriendRequest', FriendRequestSchema)
 };
 
 module.exports = DataModel;

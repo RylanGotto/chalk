@@ -3,16 +3,19 @@ var bodyParser = require('body-parser');
 var DataModel = require('./models/datamodel');
 var bcrypt = require('bcrypt');
 var jwt = require('jwt-simple');
-var jwtconfig = require('./jwt-config');                        // Tokens are signed for 3 mintues in milliseconds
+var config = require('./config');                      // Tokens are signed for 3 mintues in milliseconds
 var jmsg = require('./status-responses');
-var expiry = require('./expiry');                                 // expire the posts
+var gcm = require('./gcm');
+var expiry = require('./expiry');
+
+
 
 var app = express();
 
 app.use(bodyParser.json());
 app.use(require('./middleware/authtransform'));  //Set JWT middleware
 app.use(require('./middleware/jwt-expire'));     //Set JWT-Token Expiration middleware
-app.use(require('./middleware/jwt-user'));       //Set JWT-User Integrity middleware
+//app.use(require('./middleware/jwt-user'));       //Set JWT-User Integrity middleware
 app.use(require('./middleware/cors'));           //Set CORS middleware
 
 
@@ -23,6 +26,30 @@ var router = express.Router();
 router.get('/', function (req, res) {
     res.json(jmsg.welcome);
 });
+
+
+
+
+
+    setInterval(function(){
+
+        var populateQuery = [{path:'posts', select: 'id timeout owner dateCreated'}, {path:"owner"}];
+        DataModel.Board.find().populate(populateQuery)
+            .exec(function (err, boards) {
+                if (err) {
+                    return next(err);
+                }
+                if (boards) {
+                    expiry.pruneArray(boards);
+                }
+            });
+    }, 5000);
+
+
+
+
+
+
 
 /***********************************************************************************************************************
  *                      Auth
@@ -35,7 +62,7 @@ router.route('/auth/register')
                 if (err) {
                     return next(err);
                 }
-                ;
+
                 if (user) {
                     return res.status(401).json(jmsg.email_ex);
                 }
@@ -69,7 +96,6 @@ router.route('/auth/register')
                                 userBoard.tag = user.username + "'s Board";
                                 userBoard.timeout = 0;
                                 userBoard.save();
-
                                 res.status(200).json(jmsg.reg);
                             });
                         });
@@ -98,13 +124,66 @@ router.route('/auth/login')
                             return res.status(401).send(jmsg.inv_login);
                         }
                         var token = jwt.encode({
-                            username: user.username, exp: new Date().getTime() + jwtconfig.exp, id: user._id
-                        }, jwtconfig.secret);
+                            username: user.username, exp: new Date().getTime() + config.exp, id: user._id
+                        }, config.secret);
                         res.status(200).json({tok: token, usr: user});
                     });
             });
 
     });
+
+
+
+
+/***********************************************************************************************************************
+ *                     Registering for Push Notifications
+ **********************************************************************************************************************/
+router.route('/push/subscribe')
+
+.post(function (req, res, next) {
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+        DataModel.User.findOne({_id: {$in: [req.auth.id]}}).exec(function (err, user) {
+            if (err) {
+                return next(err);
+            }
+            if(user){
+                user.type = req.body.type;
+                user.token = req.body.token;
+                user.save();
+                console.log(user.username + " has registered a device");
+            }
+
+        });
+        res.status(200).json(jmsg.dev_reg);
+    });
+
+
+
+
+
+router.route('/push/unsubscribe')
+
+    .post(function (req, res, next) {
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+
+        DataModel.GcmData.remove({
+            username: req.auth.username
+        }, function (err) {
+            if (err)
+                res.send(err);
+            res.status(200).json(jmsg.dev_del);
+        });
+
+    });
+
+
+
+
+
 
 /***********************************************************************************************************************
  *                      Users
@@ -121,7 +200,6 @@ router.route('/users')
             if (err) {
                 return next(err);
             }
-            console.log(user);
             res.status(200).json(user);
         });
     })
@@ -163,11 +241,24 @@ router.route('/users/:user_id')
             if (err) {
                 return next(err);
             }
-            if(req.body.friendid){
-                user.friends.push(req.body.friendid);
-                user.save();
-                console.log(user);
-                res.status(200).json({message: req.body.frndname + " was added to your friends list"});
+            if(req.body.friendusername){
+                var friendRequest = DataModel.FriendRequest();
+                friendRequest.requesteeeName = req.body.friendusername;
+                friendRequest.requesterName =  user.username;
+                friendRequest.save();
+                DataModel.User.findOne({username: {$in: [req.body.friendusername]}}).exec( function (err, user) {
+                    if (err) {
+                        console.log("GCM data not found");
+                    }
+                    if (user){
+                       var gcmMessage = "You have a friend request from " + user.username;
+                       gcm.sendGcmPushNotification(gcmMessage, [user.token], 2, user.username);
+                       console.log("GCM Friend request sent to " + req.body.friendusername);
+                    }
+                });
+
+
+                res.status(200).json({message: req.body.friendusername + " was added sent a friend request!"});
             }
             if(req.body.email){
                 user.email = req.body.email;
@@ -176,7 +267,7 @@ router.route('/users/:user_id')
             }
             if(req.body.delete){
 
-            var message;
+
                 DataModel.User.findOne({_id: {$in: [req.body.delete]}}).remove().exec( function (err) {
                     if (err) {
                         res.status(200).json(err);
@@ -193,7 +284,77 @@ router.route('/users/:user_id')
 
 
     });
+/***********************************************************************************************************************
+ *                      Friend Requests
+ **********************************************************************************************************************/
+router.route('/friendRequest')
 
+    .get(function(req, res, next){
+        if (!req.auth) {
+            return res.status(401).json(jmsg.toke_unauth);
+
+        }
+        DataModel.FriendRequest.find({requesteeeName: {$in: [req.auth.username]}}).exec(function(err, requests){
+            if(requests){
+                console.log(requests.length + " Friend requests found for user " + req.auth.username);
+                return res.status(200).json(requests);
+            } else {
+                console.log("No Friend requests found for user " + req.auth.username);
+                return res.status(401).json();
+            }
+        });
+    })
+    .post(function(req, res, next){
+        if (!req.auth) {
+            return res.status(401).json(jmsg.toke_unauth);
+        }
+        if(req.body.decision){
+            console.log(req.body.friendRequestID);
+            DataModel.FriendRequest.findOne({_id: {$in: [req.body.friendRequestID]}})
+                .exec(function (err, request) {
+                    if(request){
+                        console.log("Friend requests found for user " + req.auth.username);
+
+                        DataModel.User.find({username: {$in: [request.requesteeeName, request.requesterName]}}).exec(function(err, users){
+                            if(users){
+
+                                users[0].friends.push(users[1]);
+                                users[0].save();
+                                users[1].friends.push(users[0]);
+                                users[1].save();
+
+                                console.log(users[0].username + " has added " + users[1].username + " to their friends list.");
+                                console.log(users[1].username + " has added " + users[0].username + " to their friends list.");
+
+                                var gcmMessage = users[0].username + " has accpeted your friend request!";
+                                gcm.sendGcmPushNotification(gcmMessage, [users[1].token], 1, users[0].username);
+
+                                //return res.status(200).json(request);
+                            } else {
+                                console.log("No users found with those usernames ");
+
+                            }
+                        });
+
+                    } else {
+                        console.log("No Friend requests found for user " + req.auth.username);
+
+                    }
+                });
+
+        } else {
+            console.log("Friend request denied by " + req.auth.username);
+        }
+        DataModel.FriendRequest.findOne({_id: {$in: [req.body.friendRequestID]}}).remove(function(err, request){
+            if(request){
+                console.log("Friend request removed");
+                return res.status(200).json("fail");
+            } else {
+                console.log("No friend requests to remove");
+                return res.status(200).json("fail");
+            }
+        });
+    });
 
 /***********************************************************************************************************************
  *                      Boards
@@ -221,6 +382,7 @@ router.route('/boards')
                 board.privacyLevel = String(req.body.privacyLevel);
                 board.timeout = expiry.convertToMilliseconds(req.body.timeout);
                 board.maxTTL = req.body.maxTTL
+                board.dateCreated  = Date.now();
 
                 // save the bear and check for errors
                 board.save(function (err) {
@@ -260,7 +422,7 @@ router.route('/myboard')
             return res.status(401).send();
         }
         var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content dateCreated'}, {path:"owner", select:'username'}];
-        DataModel.Board.find({tag: {$in: [req.auth.username + "'s Board"]}}).populate(populateQuery)
+        DataModel.Board.findOne({tag: {$in: [req.auth.username + "'s Board"]}}).populate(populateQuery)
             .exec(function (err, board) {
                 if (err) {
                     return next(err);
@@ -268,10 +430,9 @@ router.route('/myboard')
                 if (!board) {
                     return res.status(401).json(jmsg.board_no);
                 }
-                board.forEach(function(b){
-                    expiry.pruneArray(b.posts);
-                });
-                res.status(200).json(board);
+
+                var posts = expiry.pruneArray(board.posts);
+                res.status(200).json(posts);
             });
     });
 
@@ -303,7 +464,7 @@ router.route('/posts')
             return res.status(401).send();
         }
 
-        DataModel.Board.findOne({tag: {$in: [req.body.tag]}})
+        DataModel.Board.findOne({tag: {$in: [req.body.tag]}}).populate("owner")
             .exec(function (err, board) {
                 if (err) {
                     return next(err);
@@ -311,22 +472,28 @@ router.route('/posts')
                 if (!board) {
                     return res.status(401).json(jmsg.board_no);
                 }
-                console.log(req.auth);
                 var post = new DataModel.Post();        // create a new instance of the post model
                 post.content = req.body.content;  // set the post content (comes from the request)
                 post.owner = req.auth.username;
                 post.privacyLevel = req.body.privacyLevel;
+                post.dateCreated  = Date.now();
+
                 if( /^\+?[1-9]\d*$/.test(req.body.timeout) ) {
                     post.timeout = expiry.convertToMilliseconds(req.body.timeout);
                 } else {
                     return res.status(406).json(req.body.timeout + " must be positive integer");
                 }
-
                 // save the post and check for errors
                 post.save(function (err) {
                     if (err) {
                         return (next(err));
                     }
+                    DataModel.User.findOne({username: board.owner.username}, function(err, user){
+                        if(user) {
+                        	var gcmMessage = 'You have a new post on myBoard from ' + req.auth.username;
+                            gcm.sendGcmPushNotification(gcmMessage , [user.token], 0, req.auth.username);
+                            console.log(req.auth.username + " posted on " + user.username +"'s Board");
+                        } });
                     board.posts.push(post._id);
                     board.save();
                     res.status(200).json(jmsg.post_cre);
