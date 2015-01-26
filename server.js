@@ -31,6 +31,24 @@ router.get('/', function (req, res) {
 
 
 
+    setInterval(function(){
+
+        var populateQuery = [{path:'posts', select: 'id timeout owner dateCreated'}, {path:"owner"}];
+        DataModel.Board.find().populate(populateQuery)
+            .exec(function (err, boards) {
+                if (err) {
+                    return next(err);
+                }
+                if (boards) {
+                    expiry.pruneArray(boards);
+                }
+            });
+    }, 5000);
+
+
+
+
+
 
 
 /***********************************************************************************************************************
@@ -465,7 +483,6 @@ router.route('/posts')
                 } else {
                     return res.status(406).json(req.body.timeout + " must be positive integer");
                 }
-
                 // save the post and check for errors
                 post.save(function (err) {
                     if (err) {

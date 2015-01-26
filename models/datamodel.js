@@ -9,7 +9,7 @@ var BoardSchema = new Schema({
     maxTTL: Number,
     tag: String,
     timeout: Number, // Time in minutes that the post lasts for
-    dateCreated : { type : Number, default: Date.now() }
+    dateCreated : { type : Number}
 });
 
 var PostSchema = new Schema({
@@ -17,7 +17,7 @@ var PostSchema = new Schema({
     owner: {type:String, ref: 'User'},
     privacyLevel: String,
     timeout: Number, //Time in minutes that the post lasts for
-    dateCreated : { type : Number, default: Date.now() }
+    dateCreated : { type : Number }
 });
 
 
