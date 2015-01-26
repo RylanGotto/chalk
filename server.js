@@ -15,7 +15,6 @@ var app = express();
 app.use(bodyParser.json());
 app.use(require('./middleware/authtransform'));  //Set JWT middleware
 app.use(require('./middleware/jwt-expire'));     //Set JWT-Token Expiration middleware
-//app.use(require('./middleware/jwt-user'));       //Set JWT-User Integrity middleware
 app.use(require('./middleware/cors'));           //Set CORS middleware
 
 
@@ -25,6 +24,7 @@ var router = express.Router();
 //test route to make sure everything is working (accessed at GET http://localhost:8080/api)
 router.get('/', function (req, res) {
     res.json(jmsg.welcome);
+
 });
 
 
