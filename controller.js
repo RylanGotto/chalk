@@ -64,6 +64,21 @@ angular.module("myapp", []).controller("MyController", function ($scope, $http) 
 
     }
 
+    $scope.myData.test = function (item, event) {
+
+
+        //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
+        $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+        var res = $http.post(url + '/api/test', {data:"words"});
+        res.success(function (data, status, headers, config) {
+            alert(JSON.stringify({data: data}));
+        });
+        res.error(function (data, status, headers, config) {
+            alert("failure message: " + JSON.stringify({data: data}));
+        });
+
+    }
+
     $scope.myData.tokusrClick = function (item, event) {
 
 
