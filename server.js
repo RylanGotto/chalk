@@ -467,7 +467,7 @@ router.route('/posts')
         if (!req.auth) {
             return res.status(401).send();
         }
-        console.log("HITTING POST);
+        console.log("HITTING POST");
         DataModel.Board.findOne({tag: {$in: [req.body.tag]}}).populate("owner")
             .exec(function (err, board) {
                 if (err) {
