@@ -17,7 +17,8 @@ var PostSchema = new Schema({
     owner: {type:String, ref: 'User'},
     privacyLevel: String,
     timeout: Number, //Time in minutes that the post lasts for
-    dateCreated : { type : Number }
+    dateCreated : { type : Number },
+    img: String
 });
 
 

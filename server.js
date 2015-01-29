@@ -133,7 +133,11 @@ router.route('/auth/login')
     });
 
 
-
+router.route('/test')
+    .post(function(req, res, next){
+        console.log(req.body.data);
+        res.status(200).json(req.body.data);
+    });
 
 /***********************************************************************************************************************
  *                     Registering for Push Notifications
@@ -421,7 +425,7 @@ router.route('/myboard')
         if (!req.auth) {
             return res.status(401).send();
         }
-        var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content dateCreated'}, {path:"owner", select:'username'}];
+        var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content dateCreated img'}, {path:"owner", select:'username'}];
         DataModel.Board.findOne({tag: {$in: [req.auth.username + "'s Board"]}}).populate(populateQuery)
             .exec(function (err, board) {
                 if (err) {
@@ -477,6 +481,10 @@ router.route('/posts')
                 post.owner = req.auth.username;
                 post.privacyLevel = req.body.privacyLevel;
                 post.dateCreated  = Date.now();
+                if(req.body.img){
+                    post.img = req.body.img;
+                    console.log(req.body.img);
+                }
 
                 if( /^\+?[1-9]\d*$/.test(req.body.timeout) ) {
                     post.timeout = expiry.convertToMilliseconds(req.body.timeout);
