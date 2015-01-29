@@ -467,7 +467,6 @@ router.route('/posts')
         if (!req.auth) {
             return res.status(401).send();
         }
-        console.log("HITTING POST");
         DataModel.Board.findOne({tag: {$in: [req.body.tag]}}).populate("owner")
             .exec(function (err, board) {
                 if (err) {
@@ -500,7 +499,7 @@ router.route('/posts')
                         if(user) {
                         	var gcmMessage = 'You have a new post on myBoard from ' + req.auth.username;
                             gcm.sendGcmPushNotification(gcmMessage , [user.token], 0, req.auth.username);
-                            console.log(req.auth.username + " posted on " + user.username +"'s Board");
+                            console.log(req.auth.username + " posted on " + user.username +"'s Board HOMIE");
                         } });
                     board.posts.push(post._id);
                     board.save();
