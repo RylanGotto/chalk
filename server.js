@@ -256,7 +256,7 @@ router.route('/users/:user_id')
                     }
                     if (user){
                         console.log("BULLSHIT: " + req.body.friendusername);
-                       var gcmMessage = "You have a friend request from " + user.username;
+                       var gcmMessage = "You have a friend request from " + friendRequest.requesterName;
                        gcm.sendGcmPushNotification(gcmMessage, [user.token], 2, user.username);
                        console.log("GCM Friend request sent to " + req.body.friendusername);
                     }
