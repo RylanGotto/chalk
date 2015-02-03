@@ -262,7 +262,7 @@ router.route('/users/:user_id')
                 });
 
 
-                res.status(200).json({message: req.body.friendusername + " was added sent a friend request!"});
+                res.status(200).json({message: req.body.friendusername + " was sent a friend request!"});
             }
             if(req.body.email){
                 user.email = req.body.email;
