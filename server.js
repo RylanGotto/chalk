@@ -79,7 +79,7 @@ router.route('/auth/register')
                         var user = new DataModel.User();
                         user.username = req.body.username;
                         user.email = req.body.email;
-                        user.profileImage = "no image right now :(";
+                        user.profileImage = req.body.img;
 
 
                         bcrypt.hash(req.body.password, 10, function (err, hash) { //Hash Password
