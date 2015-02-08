@@ -105,8 +105,10 @@ router.route('/auth/register')
                                 userBoard.owner = user._id;
                                 userBoard.maxTTL = 0;
                                 userBoard.tag = user.username + "'s Board";
+
                                 userBoard.timeout = 0;
                                 userBoard.save();
+                                console.log(userBoard)
                                 res.status(200).json(jmsg.reg);
                             });
                         });
@@ -254,6 +256,40 @@ router.route('/users')
 
 
 router.route('/users/:user_id')
+
+    .post(function(req, res, next){
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+        DataModel.User.findOne({_id: {$in: [req.params.user_id]}}) //Check if user exists and get user.
+            .select('password').select('username')
+            .exec(function (err, user){
+        if(user){
+                bcrypt.compare(req.body.oldpassword,
+                    user.password, function (err, valid) {  //Compare password hash
+                        if (err) {
+                            return next(err);
+                        }
+                        if (valid) {
+                            bcrypt.hash(req.body.newpassword, 10, function (err, hash) { //Hash Password
+                                user.password = hash;
+                                user.save();
+
+                                    res.status(200).json(jmsg.reg);
+                                });
+
+                        }else{
+
+                            return res.status(401).send(jmsg.inv_login);
+                        }
+
+
+                    });
+            }
+
+        });
+    })
+
 /**
  * Requires a valid JWT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
  * Get a user from user id in the url
@@ -281,10 +317,12 @@ router.route('/users/:user_id')
         if (!req.auth) {
             return res.status(401).send();
         }
+
         DataModel.User.findOne({_id: {$in: [req.params.user_id]}}, function (err, user) {
             if (err) {
                 return next(err);
             }
+
             if(req.body.friendusername){  //If friendusername exists create a new friend requests and notify the requestee
                 var friendRequest = DataModel.FriendRequest();
                 friendRequest.requesteeeName = req.body.friendusername;
@@ -300,34 +338,96 @@ router.route('/users/:user_id')
                        console.log("GCM Friend request sent to " + req.body.friendusername);
                     }
                 });
-
-
                 res.status(200).json({message: req.body.friendusername + " was added sent a friend request!"});
             }
             if(req.body.email){
-                user.email = req.body.email;
+                DataModel.User.findOne({email: {$in: [req.body.email]}}, function (err, userToExist) {
+                    if (err) {
+                        return next(err);
+                    }
+                    if(!userToExist){
+                        user.email = req.body.email;
+                        user.save();
+                        res.status(200).json({ email: user.email});
+                    }else{
+                        res.status(401).json(jmsg.email_ex);
+                    }
+                });
+
+            }
+
+            if(req.body.username){
+                DataModel.User.findOne({username: {$in: [req.body.username]}}, function (err, userToExist) {
+                    if (err) {
+                        return next(err);
+                    }
+                    if(!userToExist){
+                        var oldBoardTag = user.username + "'s Board";
+                        var newBoardTag = req.body.username + "'s Board";
+                        DataModel.Board.findOne({tag: {$in: [oldBoardTag]}}).select('tag') //
+                            .exec(function (err, board) {
+                                if (err) {
+                                    return next(err);
+                                }
+                                if (board) {
+                                    board.tag = newBoardTag;
+                                    console.log(board);
+                                    board.save();
+                                }
+                            });
+
+
+
+
+                        user.username = req.body.username;
+                        var token = jwt.encode({
+                            username: user.username, exp: new Date().getTime() + config.exp, id: user._id
+                        }, config.secret);
+
+                        user.save();
+                        res.status(200).json({username: user.username, token: token});
+
+                    }else{
+                        res.status(401).json(jmsg.user_ex);
+                    }
+                });
+
+            }
+
+            if(req.body.maxTTL){
+                user.maxTTL = req.body.maxTTL;
                 user.save();
-                res.status(200).json(user);
+                res.status(200).json({ maxTTL: user.maxTTL});
+            }
+
+            if(req.body.img){
+                user.profileImage = req.body.img;
+                user.save();
+                res.status(200).json();
             }
 
 
-        })
-            .delete(function(req, res){
-                if(req.body.delete){
+
+    })
 
 
-                    DataModel.User.findOne({_id: {$in: [req.body.delete]}}).remove().exec( function (err) {
-                        if (err) {
-                            res.status(401).json(err);
-                        } else {
-                            res.status(200).json(jmsg.user_del);
-                        }
-                    });
 
+
+
+    })
+    .delete(function(req, res){
+
+
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+            DataModel.User.findOne({_id: {$in: [req.auth.id]}}).remove().exec( function (err) {
+                if (err) {
+                    res.status(401).json(err);
+                } else {
+                    res.status(200).json(jmsg.user_del);
                 }
             });
-
-
 
 
     });
@@ -496,6 +596,7 @@ router.route('/myboard')
         if (!req.auth) {
             return res.status(401).send();
         }
+        console.log(req.auth.username);
         var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content dateCreated img'}, {path:"owner", select:'username'}];
         DataModel.Board.findOne({tag: {$in: [req.auth.username + "'s Board"]}}).populate(populateQuery)
             .exec(function (err, board) {
