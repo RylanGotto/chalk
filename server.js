@@ -88,6 +88,8 @@ router.route('/auth/register')
 
 
                         var user = new DataModel.User();
+                        user.firstname = req.body.firstname;
+                        user.lastname = req.body.lastname;
                         user.username = req.body.username;
                         user.email = req.body.email;
                         user.profileImage = req.body.img;
