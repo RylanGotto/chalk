@@ -23,14 +23,16 @@ var PostSchema = new Schema({
 
 
 var UserSchema = new Schema({
+    firstname: {type: String},
+    lastname: {type: String},
     username: {type: String, required: true},
     password: {type: String, required: true, select: false},
     email: {type: String, required: true},
-    profileImage: String,
+    profileImage: { type : String },
     friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     type: {type: 'String'},
-    token: {type: 'String'}
-
+    token: {type: 'String'},
+    maxTTL : { type: Number, default : 0 }
 });
 
 var FriendRequestSchema = new Schema({
