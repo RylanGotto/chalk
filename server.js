@@ -91,7 +91,9 @@ router.route('/auth/register')
 
                                 var userBoard = new DataModel.Board();
                                 userBoard.privacyLevel = 0;
+
                                 userBoard.owner = user._id;
+                                console.log(userBoard.owner);
                                 userBoard.maxTTL = 0;
                                 userBoard.tag = user.username + "'s Board";
                                 userBoard.timeout = 0;
@@ -426,6 +428,7 @@ router.route('/myboard')
         if (!req.auth) {
             return res.status(401).send();
         }
+        console.log(req.auth.username);
         var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content dateCreated img'}, {path:"owner", select:'username'}];
         DataModel.Board.findOne({tag: {$in: [req.auth.username + "'s Board"]}}).populate(populateQuery)
             .exec(function (err, board) {
@@ -496,6 +499,7 @@ router.route('/posts')
                     if (err) {
                         return (next(err));
                     }
+                    console.log(board);
                     DataModel.User.findOne({username: board.owner.username}, function(err, user){
                         if(user) {
                         	var gcmMessage = 'You have a new post on myBoard from ' + req.auth.username;
