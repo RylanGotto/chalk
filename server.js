@@ -337,7 +337,7 @@ router.route('/users/:user_id')
                         console.log("GCM data not found");
                     }
                     if (user){
-                        console.log("BULLSHIT: " + req.body.friendusername);
+                        var gcmMessage = "You have a friend request from " + user.username;
                        gcm.sendGcmPushNotification(gcmMessage, [user.token], 2, user.username); //Send requestee a GCM notification with recipt
                        console.log("GCM Friend request sent to " + req.body.friendusername);
                     }
