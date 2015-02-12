@@ -789,19 +789,19 @@ router.route('/posts/:post_id')
         }, function (err, post) {
             if (err)
                 res.send(err);
-            DataModel.Board.findOne({posts: {$in: [req.params.post_id]}}).populate("owner")
+
+
+            DataModel.Board.update({posts: {$in: [req.params.post_id]}}, {$unset: {'posts':  req.params.post_id}}, {$set: {'lastModified': 555}} )
+
                 .exec(function (err, board) {
                     if (err) {
                         return next(err);
                     }
                     if (!board) {
-                        return res.status(401).json(jmsg.board_no);
-                    }else{
-                        board.lastModified = Date.now();
-                        board.save();
+                        console.log("Board not found well deleting post");
                     }
                 });
-            console.log("removed");
+
 
             res.status(200).json(jmsg.post_del);
         });
