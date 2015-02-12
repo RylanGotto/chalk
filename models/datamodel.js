@@ -3,18 +3,19 @@ var mongoose = require('../node_modules/mongoose');
 var Schema = db.Schema;
 
 var BoardSchema = new Schema({
-    posts: [{type: mongoose.Schema.Types.ObjectId, ref: 'Post'}],
-    privacyLevel: String,
-    owner: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+    posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post'}],
+    privacyLevel: { type: String},
+    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     maxTTL: Number,
-    tag: String,
-    timeout: Number, // Time in minutes that the post lasts for
-    dateCreated : { type : Number}
+    tag: { type: String},
+    timeout: { type: Number}, // Time in minutes that the post lasts for
+    dateCreated : { type: Number},
+    lastModified: { type: Number}
 });
 
 var PostSchema = new Schema({
     content: String,
-    owner: {type:String, ref: 'User'},
+    owner: { type:String, ref: 'User'},
     privacyLevel: String,
     timeout: Number, //Time in minutes that the post lasts for
     dateCreated : { type : Number },
@@ -23,15 +24,15 @@ var PostSchema = new Schema({
 
 
 var UserSchema = new Schema({
-    firstname: {type: String},
-    lastname: {type: String},
-    username: {type: String, required: true},
-    password: {type: String, required: true, select: false},
-    email: {type: String,  required: true},
+    firstname: { type: String},
+    lastname: { type: String},
+    username: { type: String, required: true},
+    password: { type: String, required: true, select: false},
+    email: { type: String,  required: true},
     profileImage: { type : String },
-    friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
-    type: {type: 'String'},
-    token: {type: 'String'},
+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
+    type: { type: 'String'},
+    token: { type: 'String'},
     maxTTL : { type: Number, default : 0 }
 });
 

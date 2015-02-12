@@ -76,7 +76,6 @@ router.route('/auth/register')
                 if (user) {
                     return res.status(401).json(jmsg.email_ex);
                 }
-
                 DataModel.User.findOne({username: {$in: [req.body.username]}}).select('username') //Check to make sure username is not already registered
                     .exec(function (err, user) {
                         if (err) {
@@ -94,11 +93,11 @@ router.route('/auth/register')
                         user.email = req.body.email;
                         user.profileImage = req.body.img;
 
-
                         bcrypt.hash(req.body.password, 10, function (err, hash) { //Hash Password
                             user.password = hash;
                             user.save(function (err, user) {
                                 if (err) {
+
                                     return (next(err));
                                 }
 
@@ -107,10 +106,11 @@ router.route('/auth/register')
                                 userBoard.owner = user._id;
                                 userBoard.maxTTL = 0;
                                 userBoard.tag = user.username + "'s Board";
-
+                                userBoard.dateCreated = Date.now();
+                                userBoard.lastModified = Date.now();
                                 userBoard.timeout = 0;
                                 userBoard.save();
-                                console.log(userBoard)
+                                console.log(userBoard);
                                 res.status(200).json(jmsg.reg);
                             });
                         });
@@ -155,11 +155,49 @@ router.route('/auth/login')
 
     });
 
+function polling(req, res, accessTime){
+    var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content dateCreated img'}, {path:"owner", select:'username'}];
+    DataModel.Board.findOne({tag: {$in: [req.body.tag]}}).populate(populateQuery)
+        .exec(function (err, board) {
+            if (!board) { //fail if no board is found
+                return res.status(401).json(jmsg.board_no);
+            }
 
-router.route('/test') //Generic test route
+
+            console.log(board.lastModified);
+            console.log(req.body.timestamp);
+            if (req.body.timestamp === 0) {
+                res.status(200).json({posts: board.posts, timestamp: board.lastModified});
+            } else if (board.lastModified > req.body.timestamp) {//check to see if the timestamp from client is less than the time modified,
+                // if it is board has been modified and respond with the updated data.
+
+                console.log("Polling data found");
+                res.status(200).json({posts: board.posts, timestamp: Date.now()});
+            } else if (accessTime + 60000 <= Date.now()) { //If the connection has been open for 60 seconds close it
+                console.log("Polling finished");
+                res.status(401).json({message: "Polling finished"});
+            } else { //If the connection is within the 60 second TTL recursively call the polling function until we have a result.
+                setTimeout(function () {
+                    console.log("123");
+                    polling(req, res, accessTime);
+                }, 1000);
+            }
+
+
+
+        });
+}
+
+
+router.route('/board') //Generic test route
     .post(function(req, res, next){
-        console.log(req.body.data);
-        res.status(200).json(req.body.data);
+        if (!req.auth) {
+            return res.status(401).send();
+        }
+        var accessTime = Date.now();
+        console.log("polling!");
+        polling(req, res, accessTime);
+
     });
 
 /***********************************************************************************************************************
@@ -324,91 +362,93 @@ router.route('/users/:user_id')
             if (err) {
                 return next(err);
             }
+            if(user) {
 
-            if(req.body.friendusername){  //If friendusername exists create a new friend requests and notify the requestee
-                var friendRequest = DataModel.FriendRequest();
-                friendRequest.requesteeeName = req.body.friendusername;
-                friendRequest.requesterName =  user.username;
-                friendRequest.save(); //Save friend request
-                DataModel.User.findOne({username: {$in: [req.body.friendusername]}}).exec( function (err, user) { //Look for requestee user object
-                    if (err) {
-                        console.log("GCM data not found");
-                    }
-                    if (user){
-                       var gcmMessage = "You have a friend request from " + user.username;
-                       gcm.sendGcmPushNotification(gcmMessage, [user.token], 2, user.username); //Send requestee a GCM notification with recipt
-                       console.log("GCM Friend request sent to " + req.body.friendusername);
-                    }
-                });
-                res.status(200).json({message: req.body.friendusername + " was added sent a friend request!"});
+
+                if (req.body.friendusername) {  //If friendusername exists create a new friend requests and notify the requestee
+                    var friendRequest = DataModel.FriendRequest();
+                    friendRequest.requesteeeName = req.body.friendusername;
+                    friendRequest.requesterName = user.username;
+                    friendRequest.save(); //Save friend request
+                    DataModel.User.findOne({username: {$in: [req.body.friendusername]}}).exec(function (err, user) { //Look for requestee user object
+                        if (err) {
+                            console.log("GCM data not found");
+                        }
+                        if (user) {
+                            var gcmMessage = "You have a friend request from " + user.username;
+                            gcm.sendGcmPushNotification(gcmMessage, [user.token], 2, user.username); //Send requestee a GCM notification with recipt
+                            console.log("GCM Friend request sent to " + req.body.friendusername);
+                        }
+                    });
+                    res.status(200).json({message: req.body.friendusername + " was added sent a friend request!"});
+                }
+                if (req.body.email) {
+                    DataModel.User.findOne({email: {$in: [req.body.email]}}, function (err, userToExist) {
+                        if (err) {
+                            return next(err);
+                        }
+                        if (!userToExist) {
+                            user.email = req.body.email;
+                            user.save();
+                            res.status(200).json({email: user.email});
+                        } else {
+                            res.status(401).json(jmsg.email_ex);
+                        }
+                    });
+
+                }
+
+                if (req.body.username) {
+                    DataModel.User.findOne({username: {$in: [req.body.username]}}, function (err, userToExist) {
+                        if (err) {
+                            return next(err);
+                        }
+                        if (!userToExist) {
+                            var oldBoardTag = user.username + "'s Board";
+                            var newBoardTag = req.body.username + "'s Board";
+                            DataModel.Board.findOne({tag: {$in: [oldBoardTag]}}).select('tag') //
+                                .exec(function (err, board) {
+                                    if (err) {
+                                        return next(err);
+                                    }
+                                    if (board) {
+                                        board.tag = newBoardTag;
+                                        console.log(board);
+                                        board.save();
+                                    }
+                                });
+
+
+                            user.username = req.body.username;
+                            var token = jwt.encode({
+                                username: user.username, exp: new Date().getTime() + config.exp, id: user._id
+                            }, config.secret);
+
+                            user.save();
+                            res.status(200).json({username: user.username, token: token});
+
+                        } else {
+                            res.status(401).json(jmsg.user_ex);
+                        }
+                    });
+
+                }
+
+                if (req.body.maxTTL) {
+                    user.maxTTL = req.body.maxTTL;
+                    user.save();
+                    res.status(200).json({maxTTL: user.maxTTL});
+                }
+
+                if (req.body.img) {
+                    user.profileImage = req.body.img;
+                    user.save();
+                    res.status(200).json();
+                }
+
+            }else{
+                res.status(401).json(jmsg.user_ex);
             }
-            if(req.body.email){
-                DataModel.User.findOne({email: {$in: [req.body.email]}}, function (err, userToExist) {
-                    if (err) {
-                        return next(err);
-                    }
-                    if(!userToExist){
-                        user.email = req.body.email;
-                        user.save();
-                        res.status(200).json({ email: user.email});
-                    }else{
-                        res.status(401).json(jmsg.email_ex);
-                    }
-                });
-
-            }
-
-            if(req.body.username){
-                DataModel.User.findOne({username: {$in: [req.body.username]}}, function (err, userToExist) {
-                    if (err) {
-                        return next(err);
-                    }
-                    if(!userToExist){
-                        var oldBoardTag = user.username + "'s Board";
-                        var newBoardTag = req.body.username + "'s Board";
-                        DataModel.Board.findOne({tag: {$in: [oldBoardTag]}}).select('tag') //
-                            .exec(function (err, board) {
-                                if (err) {
-                                    return next(err);
-                                }
-                                if (board) {
-                                    board.tag = newBoardTag;
-                                    console.log(board);
-                                    board.save();
-                                }
-                            });
-
-
-
-
-                        user.username = req.body.username;
-                        var token = jwt.encode({
-                            username: user.username, exp: new Date().getTime() + config.exp, id: user._id
-                        }, config.secret);
-
-                        user.save();
-                        res.status(200).json({username: user.username, token: token});
-
-                    }else{
-                        res.status(401).json(jmsg.user_ex);
-                    }
-                });
-
-            }
-
-            if(req.body.maxTTL){
-                user.maxTTL = req.body.maxTTL;
-                user.save();
-                res.status(200).json({ maxTTL: user.maxTTL});
-            }
-
-            if(req.body.img){
-                user.profileImage = req.body.img;
-                user.save();
-                res.status(200).json();
-            }
-
-
 
     })
 
@@ -549,6 +589,7 @@ router.route('/boards')
                 board.timeout = expiry.convertToMilliseconds(req.body.timeout);
                 board.maxTTL = req.body.maxTTL
                 board.dateCreated  = Date.now();
+                board.lastModified  = Date.now();
 
                 // save the bear and check for errors
                 board.save(function (err) {
@@ -586,7 +627,7 @@ router.route('/boards')
             });
     });
 
-//get my board
+
 router.route('/myboard')
 /**
  * Requires a valid JWT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -689,6 +730,8 @@ router.route('/posts')
                             console.log(req.auth.username + " posted on " + user.username +"'s Board");
                         } });
                     board.posts.push(post._id);
+                    board.lastModified = Date.now();
+                    console.log("post created at: " + board.lastModified);
                     board.save();
                     res.status(200).json(jmsg.post_cre);
                 });
@@ -740,11 +783,25 @@ router.route('/posts/:post_id')
         if (!req.auth) {
             return res.status(401).send();
         }
+
         DataModel.Post.remove({
             _id: req.params.post_id
         }, function (err, post) {
             if (err)
                 res.send(err);
+            DataModel.Board.findOne({posts: {$in: [req.params.post_id]}}).populate("owner")
+                .exec(function (err, board) {
+                    if (err) {
+                        return next(err);
+                    }
+                    if (!board) {
+                        return res.status(401).json(jmsg.board_no);
+                    }else{
+                        board.lastModified = Date.now();
+                        board.save();
+                    }
+                });
+            console.log("removed");
 
             res.status(200).json(jmsg.post_del);
         });

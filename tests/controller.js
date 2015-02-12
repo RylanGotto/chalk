@@ -1,12 +1,31 @@
 /**
  * Created by rylan on 13/01/15.
  */
-angular.module("myapp", []).controller("MyController", function ($scope, $http) {
+angular.module("myapp", []).controller("MyController", function ($scope, $http, $timeout) {
     $scope.myData = {};
 
-    $scope.test = "ryla is the best";
 
-    var url = "http://192.168.0.4:8080";
+    var url = "http://localhost:8080";
+
+
+    $scope.myData.test = function(item, event){
+        $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
+        var dataObj = {
+            timestamp : Date.now()
+
+        };
+            var res = $http.post(url + '/api/test', dataObj);
+            res.success(function (data, status, headers, config) {
+                alert(data.posts);
+                $scope.myData.test(item, event);
+            });
+            res.error(function (data, status, headers, config) {
+                alert("failure message: " + JSON.stringify({data: data}));
+                $scope.myData.test(item, event);
+            })
+
+
+    }
 
     $scope.myData.regClick = function (item, event) {
         var dataObj = {
@@ -64,20 +83,6 @@ angular.module("myapp", []).controller("MyController", function ($scope, $http) 
 
     }
 
-    $scope.myData.test = function (item, event) {
-
-
-        //RETRIEVE RESPONSE FROM LOGIN AND SET X-AUTH HEADER TO ACCESS RESTRICTED RESOURCES
-        $http.defaults.headers.common['x-auth'] = localStorage.jwttoken;
-        var res = $http.post(url + '/api/test', {data:"words"});
-        res.success(function (data, status, headers, config) {
-            alert(JSON.stringify({data: data}));
-        });
-        res.error(function (data, status, headers, config) {
-            alert("failure message: " + JSON.stringify({data: data}));
-        });
-
-    }
 
     $scope.myData.tokusrClick = function (item, event) {
 
@@ -99,7 +104,7 @@ angular.module("myapp", []).controller("MyController", function ($scope, $http) 
 
     $scope.myData.createPost = function (item, event) {
         var dataObj2 = {
-            tag: 'ry\'s Board',
+            tag: 'g\'s Board',
             content: "A Test post",
             privacyLevel: 1,
             timeout: 9
