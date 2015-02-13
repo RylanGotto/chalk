@@ -791,7 +791,7 @@ router.route('/posts/:post_id')
                 res.send(err);
 
 
-            DataModel.Board.update({posts: {$in: [req.params.post_id]}}, {$unset: {'posts':  req.params.post_id}}, {$set: {'lastModified': 555}} )
+            DataModel.Board.update({posts: {$in: [req.params.post_id]}}, {$unset: {'posts':  req.params.post_id}}, {$set: {'lastModified': Date.now()}} )
 
                 .exec(function (err, board) {
                     if (err) {
