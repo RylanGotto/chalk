@@ -7,6 +7,7 @@ var config = require('./config');
 var jmsg = require('./status-responses');
 var gcm = require('./gcm');
 var expiry = require('./expiry');
+var permissions= require('./permissions');
 
 
 
@@ -102,7 +103,7 @@ router.route('/auth/register')
                                 }
 
                                 var userBoard = new DataModel.Board();
-                                userBoard.privacyLevel = 0;
+                                userBoard.privacyLevel = 'Public';
                                 userBoard.owner = user._id;
                                 userBoard.maxTTL = 0;
                                 userBoard.tag = user.username + "'s Board";
@@ -156,7 +157,7 @@ router.route('/auth/login')
     });
 
 function polling(req, res, accessTime){
-    var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content dateCreated img'}, {path:"owner", select:'username'}];
+    var populateQuery = [{path:'posts', select: 'id timeout privacyLevel owner content dateCreated img permitted'}, {path:"owner", select:'username'}];
     DataModel.Board.findOne({tag: {$in: [req.body.tag]}}).populate(populateQuery)
         .exec(function (err, board) {
             if (!board) { //fail if no board is found
@@ -164,21 +165,45 @@ function polling(req, res, accessTime){
             }
 
 
-            console.log(board.lastModified);
-            console.log(req.body.timestamp);
+            //console.log(board.lastModified);
+            //console.log(req.body.timestamp);
+            var data = [];
+            var isFriend = false;
+            DataModel.User.findOne({_id: {$in: [board.owner]}}).exec(isFriend = function(err, owner){
+                isFriend = permissions.isFriend(owner.friends, req.auth.id);
+                return isFriend
+            });
+
+            if(isFriend){
+                board.posts.forEach(function(post){
+                    if( (post.privacyLevel == 'Public')||
+                        (post.privacyLevel == 'Friends')||
+                        (   (post.privacyLevel =='Private') && (permissions.isPermitted(post, req.auth.id)))) {
+                        data.push(post);
+                    }
+
+                });
+            } else {
+                board.posts.forEach(function(post){
+                    if (post.privacyLevel == 'Public'){
+                        data.push(post);
+                    }
+                });
+            }
+
             if (req.body.timestamp === 0) {
-                res.status(200).json({posts: board.posts, timestamp: board.lastModified});
+                res.status(200).json({owner: board.owner.username, posts: data, timestamp: Date.now()});
             } else if (board.lastModified > req.body.timestamp) {//check to see if the timestamp from client is less than the time modified,
                 // if it is board has been modified and respond with the updated data.
 
-                console.log("Polling data found");
-                res.status(200).json({posts: board.posts, timestamp: Date.now()});
+                //console.log("Polling data found");
+                res.status(200).json({owner: board.owner.username, posts: data, timestamp: Date.now()});
             } else if (accessTime + 60000 <= Date.now()) { //If the connection has been open for 60 seconds close it
-                console.log("Polling finished");
+                //console.log("Polling finished");
                 res.status(401).json({message: "Polling finished"});
             } else { //If the connection is within the 60 second TTL recursively call the polling function until we have a result.
                 setTimeout(function () {
-                    console.log("123");
+                    //console.log("123");
                     polling(req, res, accessTime);
                 }, 1000);
             }
@@ -195,7 +220,7 @@ router.route('/board') //Generic test route
             return res.status(401).send();
         }
         var accessTime = Date.now();
-        console.log("polling!");
+        //console.log("polling!");
         polling(req, res, accessTime);
 
     });
@@ -573,6 +598,7 @@ router.route('/boards')
             return res.status(401).json(jmsg.toke_unauth);
 
         }
+
         DataModel.Board.findOne({tag: {$in: [req.body.tag]}}).select('tag') //
             .exec(function (err, board) {
                 if (err) {
@@ -581,6 +607,8 @@ router.route('/boards')
                 if (board) {
                     return res.status(401).json(jmsg.board_ex);
                 }
+
+
 
                 var board = new DataModel.Board();
                 board.tag = req.body.tag;
@@ -707,6 +735,9 @@ router.route('/posts')
                 post.content = req.body.content;  // set the post content (comes from the request)
                 post.owner = req.auth.username;
                 post.privacyLevel = req.body.privacyLevel;
+                if(req.body.privacyLevel == 'Private') {
+                    post.permitted.push(req.auth.id);
+                }
                 post.dateCreated  = Date.now();
                 if(req.body.img){
                     post.img = req.body.img;
