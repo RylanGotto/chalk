@@ -163,16 +163,13 @@ function polling(req, res, accessTime){
                 return res.status(401).json(jmsg.board_no);
             }
 
-
-            console.log(board.lastModified);
-            console.log(req.body.timestamp);
             if (req.body.timestamp === 0) {
-                res.status(200).json({posts: board.posts, timestamp: board.lastModified});
+                res.status(200).json({owner: board.owner.username, posts: board.posts, timestamp: board.lastModified});
             } else if (board.lastModified > req.body.timestamp) {//check to see if the timestamp from client is less than the time modified,
                 // if it is board has been modified and respond with the updated data.
 
                 console.log("Polling data found");
-                res.status(200).json({posts: board.posts, timestamp: Date.now()});
+                res.status(200).json({owner: board.owner.username, posts: board.posts, timestamp: Date.now()});
             } else if (accessTime + 60000 <= Date.now()) { //If the connection has been open for 60 seconds close it
                 console.log("Polling finished");
                 res.status(401).json({message: "Polling finished"});
