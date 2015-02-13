@@ -1,7 +1,7 @@
 /**
  * Created by rylan on 08/12/14.
  */
-var jmsg = require('../status-responses');
+var jmsg = require('../config/status-responses');
 /**
  *
  * @param req

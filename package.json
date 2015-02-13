@@ -6,6 +6,9 @@
     "mongoose": "~3.8.15",
     "jwt-simple": "~0.2.0",
     "bcrypt": "~0.8.0",
-    "node-gcm": "~0.9.12"
+    "node-gcm": "~0.9.12",
+    "morgan": "~1.5.1",
+    "debug": "~2.1.1"
+
   }
 } 
