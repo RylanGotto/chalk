@@ -10,7 +10,8 @@ var BoardSchema = new Schema({
     tag: { type: String},
     timeout: { type: Number}, // Time in minutes that the post lasts for
     dateCreated : { type: Number},
-    lastModified: { type: Number}
+    lastModified: { type: Number},
+    permitted: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User'}]
 });
 
 var PostSchema = new Schema({
@@ -19,7 +20,8 @@ var PostSchema = new Schema({
     privacyLevel: String,
     timeout: Number, //Time in minutes that the post lasts for
     dateCreated : { type : Number },
-    img: String
+    img: String,
+    permitted: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User'}]
 });
 
 
