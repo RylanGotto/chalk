@@ -150,51 +150,56 @@ function polling(req, res, accessTime){
             }
 
 
-            var data = [];
-            var isFriend = false;
-            DataModel.User.findOne({_id: {$in: [board.owner]}}).exec(isFriend = function(err, owner){
-                isFriend = permissions.isFriend(owner.friends, req.auth.id);
-                return isFriend
+            DataModel.User.findOne({_id: {$in: [board.owner]}}).exec(function(err, owner){
+                DataModel.User.findOne({_id: {$in: [req.auth.id]}}).exec(function(err, user){
+                    var data = [];
+                    if (permissions.isFriend(owner.friends, req.auth.id)){
+                        console.log("these two are friends");
+                        board.posts.forEach(function(post){
+                            if( (post.privacyLevel == 'Public')||
+                                (post.privacyLevel == 'Friends')||
+                                (   (post.privacyLevel =='Private') && (permissions.isPermitted(post, req.auth.id)))) {
+                                data.push(post);
+                            }
+
+                        });
+                    } else if (permissions.hasMutualFriends(owner.friends, user.friends)){
+                        console.log("these two have at least one mutual friend");
+                        board.posts.forEach(function(post){
+                            if( (post.privacyLevel == 'Public')||
+                                (post.privacyLevel == 'Friends')) {
+                                data.push(post);
+                            }
+                        });
+                    } else {
+                        console.log("this user is not connected to the board owner");
+                        board.posts.forEach(function(post){
+                            if(post.privacyLevel == 'Public') {
+                                data.push(post);
+                            }
+                        });
+                    }
+
+
+                    if (req.body.timestamp === 0) {
+                        res.status(200).json({owner: board.owner.username, posts: data, timestamp: Date.now()});
+                    } else if (board.lastModified > req.body.timestamp) {//check to see if the timestamp from client is less than the time modified,
+                        // if it is board has been modified and respond with the updated data.
+
+
+                        res.status(200).json({owner: board.owner.username, posts: data, timestamp: Date.now()});
+                    } else if (accessTime + 60000 <= Date.now()) { //If the connection has been open for 60 seconds close it
+
+                        res.status(401).json({message: "Polling finished"});
+                    } else { //If the connection is within the 60 second TTL recursively call the polling function until we have a result.
+                        setTimeout(function () {
+
+                            polling(req, res, accessTime);
+                        }, 1000);
+                    }
+
+                });
             });
-
-            console.log("SUCCESS: " + board.tag + " started polling");
-
-            if(isFriend){
-                board.posts.forEach(function(post){
-                    if( (post.privacyLevel == 'Public')||
-                        (post.privacyLevel == 'Friends')||
-                        (   (post.privacyLevel =='Private') && (permissions.isPermitted(post, req.auth.id)))) {
-                        data.push(post);
-                    }
-
-                });
-            } else {
-                board.posts.forEach(function(post){
-                    if (post.privacyLevel == 'Public'){
-                        data.push(post);
-                    }
-                });
-            }
-
-            if (req.body.timestamp === 0) {
-                res.status(200).json({owner: board.owner.username, posts: data, timestamp: Date.now()});
-            } else if (board.lastModified > req.body.timestamp) {//check to see if the timestamp from client is less than the time modified,
-                // if it is board has been modified and respond with the updated data.
-
-
-                res.status(200).json({owner: board.owner.username, posts: data, timestamp: Date.now()});
-            } else if (accessTime + 60000 <= Date.now()) { //If the connection has been open for 60 seconds close it
-
-                res.status(401).json({message: "Polling finished"});
-            } else { //If the connection is within the 60 second TTL recursively call the polling function until we have a result.
-                setTimeout(function () {
-
-                    polling(req, res, accessTime);
-                }, 1000);
-            }
-
-
-
         });
 }
 
