@@ -22,6 +22,7 @@ var initRouter = require('./routes/init');
 var postsRouter = require('./routes/posts');
 var usersRouter = require('./routes/users');
 var boardsRouter = require('./routes/boards');
+var searchRouter = require('./routes/search');
 
 //test route to make sure everything is working (accessed at GET http://localhost:8080/api)
 router.get('/', function (req, res) {
@@ -36,6 +37,7 @@ app.use('/api', initRouter);
 app.use('/api', postsRouter);
 app.use('/api', usersRouter);
 app.use('/api', boardsRouter);
+app.use('/api', searchRouter);
 
 
 // development error handler
