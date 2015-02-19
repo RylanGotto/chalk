@@ -7,7 +7,31 @@ var DataModel = require('../models/datamodel');
 var expiry = require('../lib/expiry');
 var permissions = require('../lib/permissions');
 var jmsg = require('../config/status-responses');
-var config = require('../config/config');
+
+
+router.route('/publicBoards')
+/**
+ * Requires a valid JWT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+ * Create a new board. Check if the board tag already exists, fail with 401 if it does.
+ * If it does not, create a new board with the current time as the board created time and return with 200
+ */
+    .post(function (req, res, next) {
+
+        if (!req.auth) {
+            return res.status(401).json(jmsg.toke_unauth);
+
+        }
+        DataModel.Board.find({$where: 'this.privacyLevel ===  "Public"'}) //
+            .exec(function (err, boards) {
+                if (err) {
+                    return next(err);
+                }
+                if (boards) {
+                    return res.status(200).json(boards);
+                }
+            });
+    });
+
 
 
 router.route('/boards')
@@ -157,7 +181,7 @@ function polling(req, res, accessTime){
                 return isFriend
             });
 
-            console.log("SUCCESS: " + board.tag + " started polling");
+
 
             if(isFriend){
                 board.posts.forEach(function(post){

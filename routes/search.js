@@ -16,44 +16,62 @@ router.route('/search')
         var regexFirst = new RegExp(searchTerms[0], 'i');
         var regexLast = new RegExp(searchTerms[1], 'i');
         var users = [];
+        var userID = [];
         if(searchTerms.length == 2) { //assume element zero is first name, and element one is second name and look for matches.
             //also look for board tag based on the entire search query
 
 
 
-            DataModel.User.find({$or: [{username: regexSearch}, {lastname: regexLast}, {firstname: regexFirst}]}).exec(function (err, matchs) {
+            DataModel.User.find({$or: [{username: regexSearch}, {lastname: regexLast}, {firstname: regexFirst}]}).exec(function (err, matches) {
 
-                if (matchs) {
-                    matchs.forEach(function (user) {
+                if (matches) {
+                    matches.forEach(function (user) {
                         userInfo = user.username + " - " + user.firstname + " " + user.lastname;
                         users.push({userInfo: userInfo, username: user.username});
+                        userID.push(user._id);
                     });
-                    console.log(matchs);
                 }
-
-
-                return res.status(200).send(users);
+                DataModel.Board.find({owner: {$not: {$in:userID}}, tag: regexSearch}).exec(function (err, boards) {
+                    if (err) {
+                        return next(err);
+                    }
+                    if (!boards) {
+                        return res.status(401).json(jmsg.board_ex);
+                    }else{
+                        return res.status(200).send({users: users, boards: boards});
+                    }
+                });
             });
         }
-
         else{ //search username firstname last name and board
-            var users = [];
-            DataModel.User.find({$or: [{username: regexSearch}, {lastname: regexSearch}, {firstname: regexSearch}]}).exec(function(err, matchs){
 
-                if(matchs){
-                    matchs.forEach(function(user){
+            DataModel.User.find({$or: [{username: regexSearch}, {lastname: regexSearch}, {firstname: regexSearch}]}).exec(function(err, matches){
+
+                if(matches){
+                    matches.forEach(function(user){
                         userInfo = user.username + " - " + user.firstname + " " + user.lastname;
                         users.push({userInfo: userInfo, username: user.username});
+                        userID.push(user._id);
                     });
-                    console.log(matchs);
                 }
+                DataModel.Board.find({owner: {$not: {$in:userID}}, tag: regexSearch}).exec(function (err, boards) {
+                    if (err) {
+                        return next(err);
+                    }
+                    console.log(boards);
+                    if (!boards) {
+                        return res.status(401).json(jmsg.board_ex);
+                    }else{
+                        return res.status(200).send({users: users, boards: boards});
+                    }
+                });
 
 
 
 
 
 
-                return res.status(200).send(users);
+
 
             });
 

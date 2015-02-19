@@ -69,7 +69,7 @@ router.route('/auth/register')
                                 }
 
                                 var userBoard = new DataModel.Board();
-                                userBoard.privacyLevel = 0;
+                                userBoard.privacyLevel = 'Public';
 
                                 userBoard.owner = user._id;
                                 userBoard.maxTTL = 0;
