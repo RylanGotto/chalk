@@ -153,9 +153,14 @@ function polling(req, res, accessTime){
             DataModel.User.findOne({_id: {$in: [board.owner]}}).exec(function(err, owner){
                 DataModel.User.findOne({_id: {$in: [req.auth.id]}}).exec(function(err, user){
                     var data = [];
+
+                    //check what type of connection exists between 2 users
                     if (permissions.isFriend(owner.friends, req.auth.id)){
+
+                        //the user is on the board owners friends list
                         console.log("these two are friends");
                         board.posts.forEach(function(post){
+                            //push all boards with privacy level 'Public', 'Friends', and all 'Private' boards the users is authorized to view
                             if( (post.privacyLevel == 'Public')||
                                 (post.privacyLevel == 'Friends')||
                                 (   (post.privacyLevel =='Private') && (permissions.isPermitted(post, req.auth.id)))) {
@@ -164,16 +169,22 @@ function polling(req, res, accessTime){
 
                         });
                     } else if (permissions.hasMutualFriends(owner.friends, user.friends)){
+
+                        //these users friends lists have at least one common item
                         console.log("these two have at least one mutual friend");
                         board.posts.forEach(function(post){
+                            //push all boards with privacy level 'Public', 'Friends'
                             if( (post.privacyLevel == 'Public')||
                                 (post.privacyLevel == 'Friends')) {
                                 data.push(post);
                             }
                         });
                     } else {
+
+                        //there is no connection between these users
                         console.log("this user is not connected to the board owner");
                         board.posts.forEach(function(post){
+                            //push only 'Public' boards
                             if(post.privacyLevel == 'Public') {
                                 data.push(post);
                             }
