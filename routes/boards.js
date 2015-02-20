@@ -7,6 +7,7 @@ var DataModel = require('../models/datamodel');
 var expiry = require('../lib/expiry');
 var permissions = require('../lib/permissions');
 var jmsg = require('../config/status-responses');
+var config = require('../config/config');
 
 
 router.route('/publicBoards')
@@ -174,51 +175,67 @@ function polling(req, res, accessTime){
             }
 
 
-            var data = [];
-            var isFriend = false;
-            DataModel.User.findOne({_id: {$in: [board.owner]}}).exec(isFriend = function(err, owner){
-                isFriend = permissions.isFriend(owner.friends, req.auth.id);
-                return isFriend
+            DataModel.User.findOne({_id: {$in: [board.owner]}}).exec(function(err, owner){
+                DataModel.User.findOne({_id: {$in: [req.auth.id]}}).exec(function(err, user){
+                    var data = [];
+
+                    //check what type of connection exists between 2 users
+                    if (permissions.isFriend(owner.friends, req.auth.id)){
+
+                        //the user is on the board owners friends list
+                        console.log("these two are friends");
+                        board.posts.forEach(function(post){
+                            //push all boards with privacy level 'Public', 'Friends', and all 'Private' boards the users is authorized to view
+                            if( (post.privacyLevel == 'Public')||
+                                (post.privacyLevel == 'Friends')||
+                                (   (post.privacyLevel =='Private') && (permissions.isPermitted(post, req.auth.id)))) {
+                                data.push(post);
+                            }
+
+                        });
+                    } else if (permissions.hasMutualFriends(owner.friends, user.friends)){
+
+                        //these users friends lists have at least one common item
+                        console.log("these two have at least one mutual friend");
+                        board.posts.forEach(function(post){
+                            //push all boards with privacy level 'Public', 'Friends'
+                            if( (post.privacyLevel == 'Public')||
+                                (post.privacyLevel == 'Friends')) {
+                                data.push(post);
+                            }
+                        });
+                    } else {
+
+                        //there is no connection between these users
+                        console.log("this user is not connected to the board owner");
+                        board.posts.forEach(function(post){
+                            //push only 'Public' boards
+                            if(post.privacyLevel == 'Public') {
+                                data.push(post);
+                            }
+                        });
+                    }
+
+
+                    if (req.body.timestamp === 0) {
+                        res.status(200).json({owner: board.owner.username, posts: data, timestamp: Date.now()});
+                    } else if (board.lastModified > req.body.timestamp) {//check to see if the timestamp from client is less than the time modified,
+                        // if it is board has been modified and respond with the updated data.
+
+
+                        res.status(200).json({owner: board.owner.username, posts: data, timestamp: Date.now()});
+                    } else if (accessTime + 60000 <= Date.now()) { //If the connection has been open for 60 seconds close it
+
+                        res.status(401).json({message: "Polling finished"});
+                    } else { //If the connection is within the 60 second TTL recursively call the polling function until we have a result.
+                        setTimeout(function () {
+
+                            polling(req, res, accessTime);
+                        }, 1000);
+                    }
+
+                });
             });
-
-
-
-            if(isFriend){
-                board.posts.forEach(function(post){
-                    if( (post.privacyLevel == 'Public')||
-                        (post.privacyLevel == 'Friends')||
-                        (   (post.privacyLevel =='Private') && (permissions.isPermitted(post, req.auth.id)))) {
-                        data.push(post);
-                    }
-
-                });
-            } else {
-                board.posts.forEach(function(post){
-                    if (post.privacyLevel == 'Public'){
-                        data.push(post);
-                    }
-                });
-            }
-
-            if (req.body.timestamp === 0) {
-                res.status(200).json({owner: board.owner.username, posts: data, timestamp: Date.now()});
-            } else if (board.lastModified > req.body.timestamp) {//check to see if the timestamp from client is less than the time modified,
-                // if it is board has been modified and respond with the updated data.
-
-
-                res.status(200).json({owner: board.owner.username, posts: data, timestamp: Date.now()});
-            } else if (accessTime + 60000 <= Date.now()) { //If the connection has been open for 60 seconds close it
-
-                res.status(401).json({message: "Polling finished"});
-            } else { //If the connection is within the 60 second TTL recursively call the polling function until we have a result.
-                setTimeout(function () {
-
-                    polling(req, res, accessTime);
-                }, 1000);
-            }
-
-
-
         });
 }
 

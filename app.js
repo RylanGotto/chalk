@@ -1,4 +1,5 @@
 var express = require('express');
+var logger = require('morgan');
 var bodyParser = require('body-parser');
 var jmsg = require('./config/status-responses');
 
@@ -7,6 +8,7 @@ var jmsg = require('./config/status-responses');
 
 var app = express();
 
+app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(require('./middleware/authtransform'));  //Set JWT middleware
 app.use(require('./middleware/jwt-expire'));     //Set JWT-Token Expiration middleware
